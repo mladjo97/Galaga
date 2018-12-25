@@ -170,3 +170,11 @@ class Game(QWidget):
                 enemyPositionX = enemyXPositions[random.randint(0, len(enemyXPositions) - 1)]
                 self.enemy_shoot_laser(enemyPositionX, enemyPositionY)
                 sleep(random.randint(1, 3))
+
+    def fix_enemy_positions(self, array, newPosition):
+        newArray = array
+        if not newArray[0] == newPosition:
+            diff = newPosition - newArray[0]
+            for i in range(len(newArray)):
+                newArray[i] += diff
+        return newArray
