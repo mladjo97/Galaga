@@ -36,6 +36,7 @@ class Game(QWidget):
 
         Thread(target=self.enemy_movement_ai, name="Enemy_Movement_Thread").start()
         Thread(target=self.enemy_shooting_ai, name="Enemy_Shooting_Thread").start()
+        Thread(target=self.enemy_hit_player, name="Enemy_HitPlayer_Thread").start()
 
     def paintEvent(self, event):
         painter = QPainter()
@@ -82,7 +83,6 @@ class Game(QWidget):
                 if self.board.tiles[x, y] == config.TILE_ENEMY:
                     count += 1
         self.enemiesLeft = count
-        print(self.enemiesLeft)
 
     def update_lives(self):
         if self.board.player.lives == 3:
@@ -212,6 +212,46 @@ class Game(QWidget):
         # when its on last y position
         if not hitPlayer:
             self.board.tiles[laserX, laserY] = config.TILE_BACKGROUND
+
+    def enemy_hit_player(self):
+        sleep(5)
+        while True:
+            enemyPositionY = -1
+            playerPositionX = self.board.player.get_x()
+            enemySpritesHeight = 4  # for slight optimization only
+            hitPlayer = False
+            # Find Enemy above Player
+            for y in reversed(range(enemySpritesHeight)):
+                if self.board.tiles[playerPositionX, y] == config.TILE_ENEMY:
+                    enemyPositionY = y
+                    # Keep moving the Enemy down
+                    while enemyPositionY < config.BOARD_HEIGHT - 1:
+                        enemyPositionY += 1
+                        # If a laser already hit the Enemy
+                        if self.board.tiles[playerPositionX, enemyPositionY - 1] == config.TILE_BACKGROUND:
+                            break
+                        # If not, just slide the Enemy down
+                        if self.board.tiles[playerPositionX, enemyPositionY] == config.TILE_PLAYER:
+                            self.board.tiles[playerPositionX, enemyPositionY - 1] = config.TILE_BACKGROUND
+                            self.board.player.lower_lives()
+                            hitPlayer = True
+                            print('Player lives: {}'.format(self.board.player.lives))
+                            self.update_lives()
+                            break
+                        elif self.board.tiles[playerPositionX, enemyPositionY] == config.TILE_PLAYERLASER:
+                            self.board.tiles[playerPositionX, enemyPositionY] = config.TILE_BACKGROUND
+                            self.board.tiles[playerPositionX, enemyPositionY - 1] = config.TILE_BACKGROUND
+                            break
+                        else:
+                            self.board.tiles[playerPositionX, enemyPositionY] = config.TILE_ENEMY
+                            self.board.tiles[playerPositionX, enemyPositionY - 1] = config.TILE_BACKGROUND
+                        sleep(0.2)
+                    break
+
+            # when its on last y position
+            if not hitPlayer and not enemyPositionY == -1:
+                self.board.tiles[playerPositionX, enemyPositionY] = config.TILE_BACKGROUND
+            sleep(5)
 
     def move_player(self, x, y):
         # FIX: kad se igrac pomeri na Enemy_Laser onda nestane
