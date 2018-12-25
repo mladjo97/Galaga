@@ -5,6 +5,7 @@ from threading import Thread
 from time import sleep
 import board
 import config
+import random
 
 
 
@@ -32,6 +33,7 @@ class Game(QWidget):
         self.enemyCountTimer.start()
 
         Thread(target=self.enemy_movement_ai, name="Enemy_Movement_Thread").start()
+        Thread(target=self.enemy_shooting_ai, name="Enemy_Shooting_Thread").start()
 
     def paintEvent(self, event):
         painter = QPainter()
@@ -135,3 +137,36 @@ class Game(QWidget):
                             else:
                                 self.board.tiles[x, y] = config.TILE_BACKGROUND
             sleep(0.5)
+
+    def enemy_shooting_ai(self):
+        # FIX: Ako je ispod drugi Enemy, nemoj pucati, nadji drugog
+        sleep(2)
+        enemySpritesHeight = 4  # for slight optimization only
+        while True:
+            print('Enemies left: {}'.format(self.enemiesLeft))
+            if self.enemiesLeft == 0:
+                continue
+
+            enemyLastRow = 0
+            enemyXPositions = []
+
+            # Find the last row where an enemy is and count how many enemies are in that row
+            for x in range(config.BOARD_WIDTH):
+                if enemyLastRow == 0:
+                    for y in (range(enemySpritesHeight)):
+                        if self.board.tiles[x, y] == config.TILE_ENEMY:
+                            if enemyLastRow < y:
+                                enemyLastRow = y
+
+                if not enemyLastRow == 0:
+                    if self.board.tiles[x, enemyLastRow] == config.TILE_ENEMY:
+                        enemyXPositions.append(x)
+
+            if not enemyLastRow == 0:
+                # Randomly choose which enemy fires the shot
+                enemyPositionY = enemyLastRow
+                enemyFirstX = self.get_first_enemy_X(enemyPositionY)
+                enemyXPositions = self.fix_enemy_positions(enemyXPositions, enemyFirstX)
+                enemyPositionX = enemyXPositions[random.randint(0, len(enemyXPositions) - 1)]
+                self.enemy_shoot_laser(enemyPositionX, enemyPositionY)
+                sleep(random.randint(1, 3))
