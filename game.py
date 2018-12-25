@@ -178,3 +178,9 @@ class Game(QWidget):
             for i in range(len(newArray)):
                 newArray[i] += diff
         return newArray
+
+    def get_first_enemy_X(self, y):
+        for x in range(config.BOARD_WIDTH):
+            if self.board.tiles[x, y] == config.TILE_ENEMY:
+                return x
+
