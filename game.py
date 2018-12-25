@@ -26,6 +26,11 @@ class Game(QWidget):
         self.drawBoardTimer.timeout.connect(self.repaint)
         self.drawBoardTimer.start()
 
+        self.enemyCountTimer = QTimer()
+        self.enemyCountTimer.setInterval(config.GAME_SPEED)
+        self.enemyCountTimer.timeout.connect(self.count_enemies)
+        self.enemyCountTimer.start()
+
         Thread(target=self.enemy_movement_ai, name="Enemy_Movement_Thread").start()
 
     def paintEvent(self, event):
@@ -65,6 +70,15 @@ class Game(QWidget):
                     painter.drawPixmap(pos_x, pos_y, width, height, QPixmap('images/enemy_laser.png'))
                 else:
                     painter.drawPixmap(pos_x, pos_y, width, height, QPixmap('images/background.png'))
+
+    def count_enemies(self):
+        count = 0
+        for x in range(config.BOARD_WIDTH):
+            for y in range(config.BOARD_HEIGHT):
+                if self.board.tiles[x, y] == config.TILE_ENEMY:
+                    count += 1
+        self.enemiesLeft = count
+        print(self.enemiesLeft)
 
     def enemy_movement_ai(self):
         enemySpritesHeight = 4      # for slight optimization only
