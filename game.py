@@ -184,3 +184,29 @@ class Game(QWidget):
             if self.board.tiles[x, y] == config.TILE_ENEMY:
                 return x
 
+    def enemy_shoot_laser(self, x, y):
+        laserX = x
+        laserY = y + 1
+        hitPlayer = False
+        # ignore double instance
+        if not self.board.tiles[laserX, laserY] == config.TILE_ENEMYLASER:
+            self.board.tiles[laserX, laserY] = config.TILE_ENEMYLASER
+
+        # Keep moving the laser down
+        while laserY < config.BOARD_HEIGHT - 1:
+            laserY += 1
+            if not self.board.tiles[laserX, laserY] == config.TILE_PLAYER:
+                self.board.tiles[laserX, laserY] = config.TILE_ENEMYLASER
+                self.board.tiles[laserX, laserY - 1] = config.TILE_BACKGROUND
+            else:
+                self.board.tiles[laserX, laserY - 1] = config.TILE_BACKGROUND
+                self.board.player.lower_lives()
+                hitPlayer = True
+                print('Player lives: {}'.format(self.board.player.lives))
+                self.update_lives()
+                break
+            sleep(0.2)
+
+        # when its on last y position
+        if not hitPlayer:
+            self.board.tiles[laserX, laserY] = config.TILE_BACKGROUND
