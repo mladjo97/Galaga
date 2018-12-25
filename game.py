@@ -1,18 +1,20 @@
+import board
+from PyQt5.QtCore import Qt, QEvent
 from PyQt5.Qt import QTimer
 from PyQt5.QtWidgets import QWidget, qApp
 from PyQt5.QtGui import QPainter, QPixmap
-from threading import Thread
-from time import sleep
-import board
 import config
+from time import sleep
+from threading import Thread
 import random
-
 
 
 class Game(QWidget):
 
     def __init__(self, players):
         super(Game, self).__init__()
+        qApp.installEventFilter(self)
+        self.released = True
 
         self.enemiesLeft = 30
         self.players = players
@@ -220,3 +222,23 @@ class Game(QWidget):
                 self.board.tiles[x, y] = self.board.tiles[playerX, playerY]
                 self.board.tiles[playerX, playerY] = config.TILE_BACKGROUND
                 self.board.player.move(x, y)
+
+    def eventFilter(self, obj, event):
+        if event.type() == QEvent.KeyRelease:
+            self.released = True
+
+        if event.type() == QEvent.KeyPress and self.released and self.players != 0:
+            self.released = False
+
+            if event.key() == Qt.Key_A:
+                self.move_player(self.board.player.get_x() - 1, self.board.player.get_y())
+            elif event.key() == Qt.Key_D:
+                self.move_player(self.board.player.get_x() + 1, self.board.player.get_y())
+            elif event.key() == Qt.Key_W:
+                self.move_player(self.board.player.get_x(), self.board.player.get_y() - 1)
+            elif event.key() == Qt.Key_S:
+                self.move_player(self.board.player.get_x(), self.board.player.get_y() + 1)
+            elif event.key() == Qt.Key_Space:
+                Thread(target=self.shoot_laser, name="Player_Shooting_Thread").start()
+
+        return super(Game, self).eventFilter(obj, event)
