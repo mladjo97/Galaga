@@ -210,3 +210,13 @@ class Game(QWidget):
         # when its on last y position
         if not hitPlayer:
             self.board.tiles[laserX, laserY] = config.TILE_BACKGROUND
+
+    def move_player(self, x, y):
+        # FIX: kad se igrac pomeri na Enemy_Laser onda nestane
+        if 0 <= x <= config.BOARD_WIDTH-1 and 8 <= y <= config.BOARD_HEIGHT-1:
+            playerX = self.board.player.get_x()
+            playerY = self.board.player.get_y()
+            if self.board.tiles[playerX, playerY] == config.TILE_PLAYER:
+                self.board.tiles[x, y] = self.board.tiles[playerX, playerY]
+                self.board.tiles[playerX, playerY] = config.TILE_BACKGROUND
+                self.board.player.move(x, y)
