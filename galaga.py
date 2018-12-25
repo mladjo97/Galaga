@@ -2,6 +2,7 @@ from PyQt5.QtWidgets import QApplication, QMainWindow, QDesktopWidget
 from PyQt5.Qt import QIcon
 import config
 import sys
+import game
 
 
 class Galaga(QMainWindow):
@@ -12,6 +13,8 @@ class Galaga(QMainWindow):
 
     def initUI(self):
         # initiates application UI
+        self.game = game.Game(1)
+        self.setCentralWidget(self.game)
         self.setFixedSize(config.BOARD_WIDTH * config.TILE_WIDTH, config.BOARD_HEIGHT * config.TILE_HEIGHT)
         self.center()
 
