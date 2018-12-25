@@ -1,5 +1,6 @@
 import numpy as np
 import config
+import player
 
 
 class Board(object):
@@ -9,7 +10,7 @@ class Board(object):
 
         self.width = config.BOARD_WIDTH
         self.height = config.BOARD_HEIGHT
-        #self.player = player.Player(0, 0)
+        self.player = player.Player(0, 0)
 
         self.tiles = np.zeros((self.width, self.height), dtype=int)
         self.create_board()
