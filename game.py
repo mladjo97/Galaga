@@ -263,6 +263,37 @@ class Game(QWidget):
                 self.board.tiles[playerX, playerY] = config.TILE_BACKGROUND
                 self.board.player.move(x, y)
 
+    def shoot_laser(self):
+        laserX = self.board.player.get_x()
+        laserY = self.board.player.get_y() - 1
+        # ignore double instance
+        if not self.board.tiles[laserX, laserY] == config.TILE_PLAYERLASER:
+            self.board.tiles[laserX, laserY] = config.TILE_PLAYERLASER
+
+        # Keep moving the laser up
+        while laserY > 0:
+            laserY -= 1
+            # If a laser hit something already, just quit the loop
+            if self.board.tiles[laserX, laserY + 1] == config.TILE_BACKGROUND:
+                break
+            # Destroy before Lives tiles
+            if config.TILE_LIVES <= self.board.tiles[laserX, laserY] <= config.TILE_THREELIVES:
+                laserY += 1
+                break
+
+            # If not then continue with execution
+            if self.board.tiles[laserX, laserY] == config.TILE_ENEMY:
+                self.board.tiles[laserX, laserY + 1] = config.TILE_BACKGROUND
+                self.board.tiles[laserX, laserY] = config.TILE_BACKGROUND
+                break
+            else:
+                self.board.tiles[laserX, laserY] = config.TILE_PLAYERLASER
+                self.board.tiles[laserX, laserY + 1] = config.TILE_BACKGROUND
+            sleep(0.1)
+
+        # when its on 0 position
+        self.board.tiles[laserX, laserY] = config.TILE_BACKGROUND
+
     def eventFilter(self, obj, event):
         if event.type() == QEvent.KeyRelease:
             self.released = True
