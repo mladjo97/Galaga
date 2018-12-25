@@ -80,6 +80,16 @@ class Game(QWidget):
         self.enemiesLeft = count
         print(self.enemiesLeft)
 
+    def update_lives(self):
+        if self.board.player.lives == 3:
+            self.board.tiles[1, 0] = config.TILE_THREELIVES
+        elif self.board.player.lives == 2:
+            self.board.tiles[1, 0] = config.TILE_TWOLIVES
+        elif self.board.player.lives == 1:
+            self.board.tiles[1, 0] = config.TILE_ONELIFE
+        else:
+            self.board.tiles[1, 0] = config.TILE_ZEROLIVES
+
     def enemy_movement_ai(self):
         enemySpritesHeight = 4      # for slight optimization only
         while True:
