@@ -37,10 +37,16 @@ class GameWindow(QMainWindow):
     def play(self):
         self.resize(config.BOARD_WIDTH * config.TILE_WIDTH, config.BOARD_HEIGHT * config.TILE_HEIGHT)
         self.center()
-        self.game = game.Game(1)
+        self.game = game.Game(2)
         self.setCentralWidget(self.game)
 
     def quit(self):
+        sys.exit()
+
+    def closeEvent(self, event):
+        self.game.shouldEnemyMove = False
+        self.game.shouldEnemyHitPlayer = False
+        self.game.shouldEnemyShoot = False
         sys.exit()
 
 

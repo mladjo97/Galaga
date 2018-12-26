@@ -17,8 +17,8 @@ class Game(QWidget):
         self.released = True
 
         self.enemiesLeft = 30
-        self.players = players
-        self.board = board.Board()
+        self.activePlayers = players
+        self.board = board.Board(players)
 
         # initial movement side for enemy
         self.enemyGoLeft = True
@@ -33,6 +33,11 @@ class Game(QWidget):
         self.enemyCountTimer.setInterval(config.GAME_SPEED)
         self.enemyCountTimer.timeout.connect(self.count_enemies)
         self.enemyCountTimer.start()
+
+        # Thread stuff
+        self.shouldEnemyMove = True
+        self.shouldEnemyShoot = True
+        self.shouldEnemyHitPlayer = True
 
         Thread(target=self.enemy_movement_ai, name="Enemy_Movement_Thread").start()
         Thread(target=self.enemy_shooting_ai, name="Enemy_Shooting_Thread").start()
@@ -100,7 +105,7 @@ class Game(QWidget):
 
     def enemy_movement_ai(self):
         enemySpritesHeight = 4      # for slight optimization only
-        while True:
+        while self.shouldEnemyMove:
             if self.enemiesLeft == 0:
                 break
             # determine movement side
@@ -147,7 +152,7 @@ class Game(QWidget):
     def enemy_shooting_ai(self):
         sleep(2)
         enemySpritesHeight = 4  # for slight optimization only
-        while True:
+        while self.shouldEnemyShoot:
             if self.enemiesLeft == 0:
                 continue
 
@@ -177,7 +182,6 @@ class Game(QWidget):
                 enemyBelow = False
                 for y in range(enemyPositionY+1, config.BOARD_HEIGHT):
                     if self.board.tiles[enemyPositionX, y] == config.TILE_ENEMY:
-                        print('[X: {}, Y: {}'.format(enemyPositionX, y))
                         enemyBelow = True
 
                 if not enemyBelow:
@@ -226,7 +230,7 @@ class Game(QWidget):
 
     def enemy_hit_player(self):
         sleep(5)
-        while True:
+        while self.shouldEnemyHitPlayer:
             enemyPositionY = -1
             playerPositionX = self.board.player.get_x()
             enemySpritesHeight = 4  # for slight optimization only
