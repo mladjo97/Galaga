@@ -253,6 +253,22 @@ class Game(QWidget):
                 self.board.tiles[playerPositionX, enemyPositionY] = config.TILE_BACKGROUND
             sleep(5)
 
+    def try_move_player(self, x, y):
+        if not 0 <= x <= config.BOARD_WIDTH - 1 and not 8 <= y <= config.BOARD_HEIGHT - 1:
+            return False
+
+        # Provere da li moze da se pomeri na laser, neprijatelja, prijatelja ...
+        if self.board.tiles[x, y] == config.TILE_ENEMYLASER:
+            self.board.player.lower_lives()
+            self.update_lives()
+            return False
+        if self.board.tiles[x, y] == config.TILE_ENEMY:
+            self.board.player.lower_lives()
+            self.update_lives()
+            return False
+
+        return True
+
     def move_player(self, x, y):
         # FIX: kad se igrac pomeri na Enemy_Laser onda nestane
         if 0 <= x <= config.BOARD_WIDTH-1 and 8 <= y <= config.BOARD_HEIGHT-1:
@@ -302,14 +318,19 @@ class Game(QWidget):
             self.released = False
 
             if event.key() == Qt.Key_A:
-                self.move_player(self.board.player.get_x() - 1, self.board.player.get_y())
+                if self.try_move_player(self.board.player.get_x() - 1, self.board.player.get_y()):
+                    self.move_player(self.board.player.get_x() - 1, self.board.player.get_y())
             elif event.key() == Qt.Key_D:
-                self.move_player(self.board.player.get_x() + 1, self.board.player.get_y())
+                if self.try_move_player(self.board.player.get_x() + 1, self.board.player.get_y()):
+                    self.move_player(self.board.player.get_x() + 1, self.board.player.get_y())
             elif event.key() == Qt.Key_W:
-                self.move_player(self.board.player.get_x(), self.board.player.get_y() - 1)
+                if self.try_move_player(self.board.player.get_x(), self.board.player.get_y() - 1):
+                    self.move_player(self.board.player.get_x(), self.board.player.get_y() - 1)
             elif event.key() == Qt.Key_S:
-                self.move_player(self.board.player.get_x(), self.board.player.get_y() + 1)
+                if self.try_move_player(self.board.player.get_x() + 1, self.board.player.get_y() + 1):
+                    self.move_player(self.board.player.get_x() + 1, self.board.player.get_y() + 1)
             elif event.key() == Qt.Key_Space:
-                Thread(target=self.shoot_laser, name="Player_Shooting_Thread").start()
+                if self.board.player.lives > 0:
+                    Thread(target=self.shoot_laser, name="Player_Shooting_Thread").start()
 
         return super(Game, self).eventFilter(obj, event)
