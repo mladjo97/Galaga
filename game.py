@@ -93,6 +93,10 @@ class Game(QWidget):
             self.board.tiles[1, 0] = config.TILE_ONELIFE
         else:
             self.board.tiles[1, 0] = config.TILE_ZEROLIVES
+            # remove player
+            playerX = self.board.player.get_x()
+            playerY = self.board.player.get_y()
+            self.board.tiles[playerX, playerY] = config.TILE_BACKGROUND
 
     def enemy_movement_ai(self):
         enemySpritesHeight = 4      # for slight optimization only
@@ -141,11 +145,9 @@ class Game(QWidget):
             sleep(0.5)
 
     def enemy_shooting_ai(self):
-        # FIX: Ako je ispod drugi Enemy, nemoj pucati, nadji drugog
         sleep(2)
         enemySpritesHeight = 4  # for slight optimization only
         while True:
-            print('Enemies left: {}'.format(self.enemiesLeft))
             if self.enemiesLeft == 0:
                 continue
 
@@ -170,7 +172,16 @@ class Game(QWidget):
                 enemyFirstX = self.get_first_enemy_X(enemyPositionY)
                 enemyXPositions = self.fix_enemy_positions(enemyXPositions, enemyFirstX)
                 enemyPositionX = enemyXPositions[random.randint(0, len(enemyXPositions) - 1)]
-                self.enemy_shoot_laser(enemyPositionX, enemyPositionY)
+
+                # provera da li je ispod neprijatelj, ako jeste, nemoj pucati
+                enemyBelow = False
+                for y in range(enemyPositionY+1, config.BOARD_HEIGHT):
+                    if self.board.tiles[enemyPositionX, y] == config.TILE_ENEMY:
+                        print('[X: {}, Y: {}'.format(enemyPositionX, y))
+                        enemyBelow = True
+
+                if not enemyBelow:
+                    self.enemy_shoot_laser(enemyPositionX, enemyPositionY)
                 sleep(random.randint(1, 3))
 
     def fix_enemy_positions(self, array, newPosition):
@@ -270,7 +281,6 @@ class Game(QWidget):
         return True
 
     def move_player(self, x, y):
-        # FIX: kad se igrac pomeri na Enemy_Laser onda nestane
         if 0 <= x <= config.BOARD_WIDTH-1 and 8 <= y <= config.BOARD_HEIGHT-1:
             playerX = self.board.player.get_x()
             playerY = self.board.player.get_y()
@@ -318,17 +328,21 @@ class Game(QWidget):
             self.released = False
 
             if event.key() == Qt.Key_A:
-                if self.try_move_player(self.board.player.get_x() - 1, self.board.player.get_y()):
-                    self.move_player(self.board.player.get_x() - 1, self.board.player.get_y())
+                if self.board.player.lives > 0:
+                    if self.try_move_player(self.board.player.get_x() - 1, self.board.player.get_y()):
+                        self.move_player(self.board.player.get_x() - 1, self.board.player.get_y())
             elif event.key() == Qt.Key_D:
-                if self.try_move_player(self.board.player.get_x() + 1, self.board.player.get_y()):
-                    self.move_player(self.board.player.get_x() + 1, self.board.player.get_y())
+                if self.board.player.lives > 0:
+                    if self.try_move_player(self.board.player.get_x() + 1, self.board.player.get_y()):
+                        self.move_player(self.board.player.get_x() + 1, self.board.player.get_y())
             elif event.key() == Qt.Key_W:
-                if self.try_move_player(self.board.player.get_x(), self.board.player.get_y() - 1):
-                    self.move_player(self.board.player.get_x(), self.board.player.get_y() - 1)
+                if self.board.player.lives > 0:
+                    if self.try_move_player(self.board.player.get_x(), self.board.player.get_y() - 1):
+                        self.move_player(self.board.player.get_x(), self.board.player.get_y() - 1)
             elif event.key() == Qt.Key_S:
-                if self.try_move_player(self.board.player.get_x() + 1, self.board.player.get_y() + 1):
-                    self.move_player(self.board.player.get_x() + 1, self.board.player.get_y() + 1)
+                if self.board.player.lives > 0:
+                    if self.try_move_player(self.board.player.get_x() + 1, self.board.player.get_y() + 1):
+                        self.move_player(self.board.player.get_x() + 1, self.board.player.get_y() + 1)
             elif event.key() == Qt.Key_Space:
                 if self.board.player.lives > 0:
                     Thread(target=self.shoot_laser, name="Player_Shooting_Thread").start()
