@@ -26,8 +26,8 @@ class Board(object):
                 self.tiles[i, j] = config.TILE_ENEMY
 
         # Set Player 1
-        self.tiles[config.BOARD_WIDTH // 2 - 1, config.BOARD_HEIGHT - 1] = config.TILE_PLAYER
-        self.player.move(config.BOARD_WIDTH // 2 - 1, config.BOARD_HEIGHT - 1)
+        self.tiles[config.BOARD_WIDTH // 2 - 1, config.BOARD_HEIGHT - 2] = config.TILE_PLAYER
+        self.player.move(config.BOARD_WIDTH // 2 - 1, config.BOARD_HEIGHT - 2)
 
         # Set Lives label
         self.tiles[0, 0] = config.TILE_LIVES

@@ -17,8 +17,8 @@ class Game(QWidget):
         self.released = True
 
         self.enemiesLeft = 30
-        self.activePlayers = players
-        self.board = board.Board(players)
+        self.players = players
+        self.board = board.Board()
 
         # initial movement side for enemy
         self.enemyGoLeft = True
@@ -269,7 +269,10 @@ class Game(QWidget):
             sleep(5)
 
     def try_move_player(self, x, y):
-        if not 0 <= x <= config.BOARD_WIDTH - 1 and not 8 <= y <= config.BOARD_HEIGHT - 1:
+        if x == 20:
+            return False
+
+        if not 0 <= x <= config.BOARD_WIDTH-1 and not 8 <= y <= config.BOARD_HEIGHT - 1:
             return False
 
         # Provere da li moze da se pomeri na laser, neprijatelja, prijatelja ...
@@ -339,14 +342,6 @@ class Game(QWidget):
                 if self.board.player.lives > 0:
                     if self.try_move_player(self.board.player.get_x() + 1, self.board.player.get_y()):
                         self.move_player(self.board.player.get_x() + 1, self.board.player.get_y())
-            elif event.key() == Qt.Key_W:
-                if self.board.player.lives > 0:
-                    if self.try_move_player(self.board.player.get_x(), self.board.player.get_y() - 1):
-                        self.move_player(self.board.player.get_x(), self.board.player.get_y() - 1)
-            elif event.key() == Qt.Key_S:
-                if self.board.player.lives > 0:
-                    if self.try_move_player(self.board.player.get_x() + 1, self.board.player.get_y() + 1):
-                        self.move_player(self.board.player.get_x() + 1, self.board.player.get_y() + 1)
             elif event.key() == Qt.Key_Space:
                 if self.board.player.lives > 0:
                     Thread(target=self.shoot_laser, name="Player_Shooting_Thread").start()

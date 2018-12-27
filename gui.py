@@ -44,6 +44,7 @@ class GameWindow(QMainWindow):
         sys.exit()
 
     def closeEvent(self, event):
+        print('Stopping all threads')
         self.game.shouldEnemyMove = False
         self.game.shouldEnemyHitPlayer = False
         self.game.shouldEnemyShoot = False
