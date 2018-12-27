@@ -202,6 +202,7 @@ class Game(QWidget):
                 return x
 
     def enemy_shoot_laser(self, x, y):
+        print('pokusavam da pucam')
         laserX = x
         laserY = y + 1
         hitPlayer = False
@@ -211,7 +212,15 @@ class Game(QWidget):
 
         # Keep moving the laser down
         while laserY < config.BOARD_HEIGHT - 1:
+            # pomeri ka dole
             laserY += 1
+
+            # provera da li je ispred laser igraca
+            if self.board.tiles[laserX, laserY] == config.TILE_PLAYERLASER:
+                print('unistavam njihov laser')
+                self.board.tiles[laserX, laserY] = config.TILE_BACKGROUND
+                return
+
             if not self.board.tiles[laserX, laserY] == config.TILE_PLAYER:
                 self.board.tiles[laserX, laserY] = config.TILE_ENEMYLASER
                 self.board.tiles[laserX, laserY - 1] = config.TILE_BACKGROUND
@@ -305,7 +314,9 @@ class Game(QWidget):
 
         # Keep moving the laser up
         while laserY > 0:
+            # pomeri ka gore
             laserY -= 1
+
             # If a laser hit something already, just quit the loop
             if self.board.tiles[laserX, laserY + 1] == config.TILE_BACKGROUND:
                 break
@@ -314,7 +325,13 @@ class Game(QWidget):
                 laserY += 1
                 break
 
-            # If not then continue with execution
+            # Check for enemy laser
+            if self.board.tiles[laserX, laserY] == config.TILE_ENEMYLASER:
+                print(' unistavam nas laser ')
+                self.board.tiles[laserX, laserY] = config.TILE_BACKGROUND
+                break
+
+                # If not then continue with execution
             if self.board.tiles[laserX, laserY] == config.TILE_ENEMY:
                 self.board.tiles[laserX, laserY + 1] = config.TILE_BACKGROUND
                 self.board.tiles[laserX, laserY] = config.TILE_BACKGROUND
