@@ -43,8 +43,8 @@ class GameWindow(QMainWindow):
     def keyPressEvent(self, event):
         try:
             self.game.__update_position__(event.key())
-        except:
-            print('Cant do that')
+        except Exception as e:
+            print('Exception: {}'.format(str(e)))
 
     def quit(self):
         sys.exit()

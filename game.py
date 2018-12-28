@@ -2,10 +2,10 @@ from PyQt5.QtWidgets import QWidget, QLabel, QHBoxLayout
 from PyQt5.QtGui import QPixmap, QImage
 from PyQt5.QtCore import Qt
 import config
-from player import Player
 from time import sleep
 from threading import Thread, Lock
 from player_actions import MoveLaser
+from player import Player
 
 
 class Game(QWidget):
@@ -21,25 +21,43 @@ class Game(QWidget):
         # Gameplay options
         self.activePlayers = players
         self.playerSpeed = config.PLAYER_SPEED
-        self.playerWidth = config.IMAGE_WIDTH
-        self.playerHeight = config.IMAGE_HEIGHT
 
         # Add player one
         self.playerPixmap = QPixmap('images/ship.png')
         self.playerLabel = QLabel(self)
         self.player = Player(0, 0)
 
+        # Set enemy pixmaps
+        self.enemyPixmap = QPixmap('images/enemy.png')
+        self.enemyPixmap = self.enemyPixmap.scaledToWidth(config.IMAGE_WIDTH - 20)
+        self.enemyPixmap = self.enemyPixmap.scaledToHeight(config.IMAGE_HEIGHT - 20)
+
         self.__init_ui__()
 
     def __init_ui__(self):
         # Set player start position
         self.playerLabel.setPixmap(self.playerPixmap)
-        playerLabelX = config.BOARD_WIDTH // 2 - self.playerWidth
-        playerLabelY = config.BOARD_HEIGHT - self.playerHeight
-        self.playerLabel.setGeometry(playerLabelX, playerLabelY, self.playerWidth, self.playerHeight)
+        playerLabelX = config.BOARD_WIDTH // 2 - config.IMAGE_WIDTH
+        playerLabelY = config.BOARD_HEIGHT - config.IMAGE_HEIGHT
+        self.playerLabel.setGeometry(playerLabelX, playerLabelY, config.IMAGE_WIDTH, config.IMAGE_HEIGHT)
+
+        # Set enemy start positions
+        self.enemyLabels = []
+
+        for i in range(3):
+            for j in range(10):
+                print('setting enemy')
+                enemyLabel = QLabel(self)
+                enemyLabel.setPixmap(self.enemyPixmap)
+                # 3 je jer hocemo da budu u sredini
+                positionX = config.IMAGE_WIDTH * (j+3)
+                positionY = config.IMAGE_WIDTH * (i+1)
+                enemyLabel.setGeometry(positionX, positionY, config.IMAGE_WIDTH, config.IMAGE_HEIGHT)
+                enemyLabel.show()
+                self.enemyLabels.append(enemyLabel)
 
     def try_move_player(self, x):
-        if x == config.BOARD_WIDTH - self.playerWidth or x == 0:
+        if x == config.BOARD_WIDTH - config.IMAGE_WIDTH or x == 0:
             return False
         return True
 
