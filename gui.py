@@ -1,6 +1,6 @@
 from PyQt5.QtWidgets import QMainWindow, QDesktopWidget, QStackedWidget, QWidget, QPushButton
 from PyQt5.QtGui import QIcon
-from PyQt5.QtCore import pyqtSignal
+from PyQt5.QtCore import pyqtSignal, Qt
 import game
 import config
 import sys
@@ -41,13 +41,17 @@ class GameWindow(QMainWindow):
         self.setCentralWidget(self.game)
 
     def keyPressEvent(self, event):
-        self.game.__update_position__(event.key())
+        try:
+            self.game.__update_position__(event.key())
+        except:
+            print('Cant do that')
 
     def quit(self):
         sys.exit()
 
     def closeEvent(self, event):
-        print('Closing window')
+        print('Closing all threads')
+        self.game.moveLaser.die()
         sys.exit()
 
 

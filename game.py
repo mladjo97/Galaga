@@ -5,14 +5,18 @@ import config
 from player import Player
 from time import sleep
 from threading import Thread, Lock
+from player_actions import MoveLaser
 
 
 class Game(QWidget):
 
     def __init__(self, players):
-        super(Game, self).__init__()
+        super().__init__()
 
-        self.lock = Lock()
+        # MoveLaser 'thread'
+        self.moveLaser = MoveLaser()
+        self.moveLaser.calc_done.connect(self.move_laser_up)
+        self.moveLaser.start()
 
         # Gameplay options
         self.activePlayers = players
@@ -30,16 +34,16 @@ class Game(QWidget):
     def __init_ui__(self):
         # Set player start position
         self.playerLabel.setPixmap(self.playerPixmap)
-        self.playerLabel.setGeometry(config.BOARD_WIDTH // 2 - self.playerWidth, config.BOARD_HEIGHT - self.playerHeight, self.playerWidth, self.playerHeight)
+        playerLabelX = config.BOARD_WIDTH // 2 - self.playerWidth
+        playerLabelY = config.BOARD_HEIGHT - self.playerHeight
+        self.playerLabel.setGeometry(playerLabelX, playerLabelY, self.playerWidth, self.playerHeight)
 
     def try_move_player(self, x):
         if x == config.BOARD_WIDTH - self.playerWidth or x == 0:
-            print('Udara granicu')
             return False
         return True
 
     def player_shoot_laser(self, startX, startY):
-
         laserPixmap = QPixmap('images/laser.png')
         laserLabel = QLabel(self)
 
@@ -47,24 +51,13 @@ class Game(QWidget):
         laserLabel.setGeometry(startX, startY, config.IMAGE_WIDTH, config.IMAGE_HEIGHT)
         laserLabel.show()
 
-        # FIX: Switch to signals
-        # Glavni thread iscrtava a sporedni radi proracun x, y
-        Thread(target=self.move_laser_up, args=[laserLabel]).start()
+        self.moveLaser.add_label(laserLabel)
 
-    def move_laser_up(self, laserLabel: QLabel):
-        laserGeo = laserLabel.geometry()
-        laserY = laserGeo.y()
-
-        while laserY > 0:
-            with self.lock:
-                laserGeo = laserLabel.geometry()
-                laserY = laserGeo.y()
-                laserLabel.move(laserGeo.x(), laserY - 5)
-                print('Laser moved up: {}'.format(laserY))
-            sleep(0.01)
-
-        # destroy object
-        laserLabel.hide()
+    def move_laser_up(self, laserLabel: QLabel, newX, newY):
+        if newY > 0:
+            laserLabel.move(newX, newY)
+        else:
+            laserLabel.hide()
 
     def __update_position__(self, key):
         playerPos = self.playerLabel.geometry()
