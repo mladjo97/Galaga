@@ -9,9 +9,11 @@ from threading import Thread
 import random
 
 
+
 class Game(QWidget):
 
     def __init__(self, players):
+
         super(Game, self).__init__()
         qApp.installEventFilter(self)
         self.released = True
@@ -33,15 +35,27 @@ class Game(QWidget):
         self.enemyCountTimer.setInterval(config.GAME_SPEED)
         self.enemyCountTimer.timeout.connect(self.count_enemies)
         self.enemyCountTimer.start()
+        self.enemySpeed = 1
 
         # Thread stuff
         self.shouldEnemyMove = True
         self.shouldEnemyShoot = True
         self.shouldEnemyHitPlayer = True
+        self.souldNextLevel = True
 
         Thread(target=self.enemy_movement_ai, name="Enemy_Movement_Thread").start()
         Thread(target=self.enemy_shooting_ai, name="Enemy_Shooting_Thread").start()
         Thread(target=self.enemy_hit_player, name="Enemy_HitPlayer_Thread").start()
+        Thread(target=self.next_level,name="Next_Level_Thread").start()
+
+    def next_level(self):
+        while(self.souldNextLevel):
+            if self.enemiesLeft == 29: #0 treba ovde
+                if self.enemySpeed >= 0.2:
+                    self.enemySpeed -= 0.1
+                self.enemiesLeft = 30
+                self.board.create_board(self.board.player.lives)
+
 
     def paintEvent(self, event):
         painter = QPainter()
@@ -147,7 +161,7 @@ class Game(QWidget):
                                     self.board.tiles[x, y] = config.TILE_BACKGROUND
                             else:
                                 self.board.tiles[x, y] = config.TILE_BACKGROUND
-            sleep(0.5)
+            sleep(self.enemySpeed)
 
     def enemy_shooting_ai(self):
         sleep(2)
@@ -212,7 +226,13 @@ class Game(QWidget):
 
         # Keep moving the laser down
         while laserY < config.BOARD_HEIGHT - 1:
-            # pomeri ka dole
+
+            if self.board.tiles[laserX, laserY] == config.TILE_PLAYER:
+                print("Pogodio ga")
+                hitPlayer = True
+                break
+
+            #  pomeri ka dole
             laserY += 1
 
             # provera da li je ispred laser igraca
@@ -228,10 +248,11 @@ class Game(QWidget):
                 self.board.tiles[laserX, laserY - 1] = config.TILE_BACKGROUND
                 self.board.player.lower_lives()
                 hitPlayer = True
+
                 print('Player lives: {}'.format(self.board.player.lives))
                 self.update_lives()
                 break
-            sleep(0.2)
+            sleep(self.enemySpeed)
 
         # when its on last y position
         if not hitPlayer:
@@ -250,6 +271,12 @@ class Game(QWidget):
                     enemyPositionY = y
                     # Keep moving the Enemy down
                     while enemyPositionY < config.BOARD_HEIGHT - 1:
+
+                        if self.board.tiles[playerPositionX, enemyPositionY] == config.TILE_PLAYER:
+                            print("Pogodio ga")
+                            hitPlayer = True
+                            break
+
                         enemyPositionY += 1
                         # If a laser already hit the Enemy
                         if self.board.tiles[playerPositionX, enemyPositionY - 1] == config.TILE_BACKGROUND:
@@ -261,6 +288,7 @@ class Game(QWidget):
                             hitPlayer = True
                             print('Player lives: {}'.format(self.board.player.lives))
                             self.update_lives()
+                            print("Pogodio ga ovaj")
                             break
                         elif self.board.tiles[playerPositionX, enemyPositionY] == config.TILE_PLAYERLASER:
                             self.board.tiles[playerPositionX, enemyPositionY] = config.TILE_BACKGROUND
@@ -269,7 +297,8 @@ class Game(QWidget):
                         else:
                             self.board.tiles[playerPositionX, enemyPositionY] = config.TILE_ENEMY
                             self.board.tiles[playerPositionX, enemyPositionY - 1] = config.TILE_BACKGROUND
-                        sleep(0.2)
+                        sleep(self.enemySpeed)
+
                     break
 
             # when its on last y position
@@ -286,17 +315,18 @@ class Game(QWidget):
 
         # Provere da li moze da se pomeri na laser, neprijatelja, prijatelja ...
         if self.board.tiles[x, y] == config.TILE_ENEMYLASER:
-            self.board.player.lower_lives()
-            self.update_lives()
-            return False
+           self.board.player.lower_lives()
+           self.update_lives()
+           return True
         if self.board.tiles[x, y] == config.TILE_ENEMY:
             self.board.player.lower_lives()
             self.update_lives()
-            return False
+            return True
 
         return True
 
     def move_player(self, x, y):
+
         if 0 <= x <= config.BOARD_WIDTH-1 and 8 <= y <= config.BOARD_HEIGHT-1:
             playerX = self.board.player.get_x()
             playerY = self.board.player.get_y()

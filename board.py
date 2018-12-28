@@ -15,7 +15,7 @@ class Board(object):
         self.tiles = np.zeros((self.width, self.height), dtype=int)
         self.create_board()
 
-    def create_board(self):
+    def create_board(self , lives = 3):
         # init background
         for i in range(self.width):
             for j in range(self.height):
@@ -31,4 +31,9 @@ class Board(object):
 
         # Set Lives label
         self.tiles[0, 0] = config.TILE_LIVES
-        self.tiles[1, 0] = config.TILE_THREELIVES
+        if lives == 3:
+            self.tiles[1, 0] = config.TILE_THREELIVES
+        elif lives == 2:
+            self.tiles[1, 0] = config.TILE_TWOLIVES
+        else:
+            self.tiles[1, 0] = config.TILE_ONELIFE

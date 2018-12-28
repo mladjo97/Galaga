@@ -48,6 +48,7 @@ class GameWindow(QMainWindow):
         self.game.shouldEnemyMove = False
         self.game.shouldEnemyHitPlayer = False
         self.game.shouldEnemyShoot = False
+        self.game.souldNextLevel = False
         sys.exit()
 
 
