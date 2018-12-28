@@ -40,6 +40,9 @@ class GameWindow(QMainWindow):
         self.game = game.Game(1)
         self.setCentralWidget(self.game)
 
+    def keyPressEvent(self, event):
+        self.game.__update_position__(event.key())
+
     def quit(self):
         sys.exit()
 

@@ -16,4 +16,3 @@ class Board(object):
 
     def create_board(self):
         pass
-
