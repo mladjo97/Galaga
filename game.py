@@ -1,7 +1,7 @@
 from PyQt5.QtWidgets import QWidget, QLabel
-from PyQt5.QtGui import QPixmap
+from PyQt5.QtGui import QPixmap, QImage
 from PyQt5.QtCore import Qt
-
+import config
 
 class Game(QWidget):
 
@@ -9,46 +9,33 @@ class Game(QWidget):
         super(Game, self).__init__()
 
         self.activePlayers = players
+        self.playerSpeed = config.PLAYER_SPEED
+        self.playerWidth = config.PLAYER_WIDTH
+        self.playerHeight = config.PLAYER_HEIGHT
 
-        self.pix1 = QPixmap('images/ship.png')
-        self.pix2 = QPixmap('images/ship.png')
-        self.label1 = QLabel(self)
-        self.label2 = QLabel(self)
+        self.playerPixmap = QPixmap('images/ship.png')
+        self.playerLabel = QLabel(self)
 
         self.__init_ui__()
 
     def __init_ui__(self):
+        # Set player
+        self.playerLabel.setPixmap(self.playerPixmap)
+        self.playerLabel.setGeometry(config.BOARD_WIDTH // 2 - self.playerWidth, config.BOARD_HEIGHT - 50, self.playerWidth, self.playerHeight)
 
-        self.label1.setPixmap(self.pix1)
-        self.label1.setGeometry(100, 40, 50, 50)
-
-        self.label2.setPixmap(self.pix2)
-        self.label2.setGeometry(10, 40, 50, 50)
-
-    def keyPressEvent(self, e):
-        print('KeyPressEvent fired.')
-        self.__update_position__(e.key())
+    def try_move_player(self, x):
+        if x == config.BOARD_WIDTH - self.playerWidth or x == 0:
+            print('udara granicu')
+            return False
+        return True
 
     def __update_position__(self, key):
-        print('_update_position_')
-        rec1 = self.label1.geometry()
-        rec2 = self.label2.geometry()
-
-        if key == Qt.Key_Right:
-            self.label1.setGeometry(rec1.x() + 5, rec1.y(), rec1.width(), rec1.height())
-        elif key == Qt.Key_Down:
-            self.label1.setGeometry(rec1.x(), rec1.y() + 5, rec1.width(), rec1.height())
-        elif key == Qt.Key_Up:
-            self.label1.setGeometry(rec1.x(), rec1.y() - 5, rec1.width(), rec1.height())
-        elif key == Qt.Key_Left:
-            self.label1.setGeometry(rec1.x() - 5, rec1.y(), rec1.width(), rec1.height())
+        playerPos = self.playerLabel.geometry()
 
         if key == Qt.Key_D:
-            self.label2.setGeometry(rec2.x() + 5, rec2.y(), rec2.width(), rec2.height())
-        elif key == Qt.Key_S:
-            self.label2.setGeometry(rec2.x(), rec2.y() + 5, rec2.width(), rec2.height())
-        elif key == Qt.Key_W:
-            self.label2.setGeometry(rec2.x(), rec2.y() - 5, rec2.width(), rec2.height())
+            if self.try_move_player(playerPos.x() + self.playerSpeed):
+                self.playerLabel.setGeometry(playerPos.x() + self.playerSpeed, playerPos.y(), playerPos.width(), playerPos.height())
         elif key == Qt.Key_A:
-            self.label2.setGeometry(rec2.x() - 5, rec2.y(), rec2.width(), rec2.height())
+            if self.try_move_player(playerPos.x() - self.playerSpeed):
+                self.playerLabel.setGeometry(playerPos.x() - self.playerSpeed, playerPos.y(), playerPos.width(), playerPos.height())
 
