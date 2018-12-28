@@ -35,19 +35,16 @@ class GameWindow(QMainWindow):
         self.center()
 
     def play(self):
-        self.resize(config.BOARD_WIDTH * config.TILE_WIDTH, config.BOARD_HEIGHT * config.TILE_HEIGHT)
+        self.resize(config.BOARD_WIDTH, config.BOARD_HEIGHT)
         self.center()
-        self.game = game.Game(2)
+        self.game = game.Game(1)
         self.setCentralWidget(self.game)
 
     def quit(self):
         sys.exit()
 
     def closeEvent(self, event):
-        print('Stopping all threads')
-        self.game.shouldEnemyMove = False
-        self.game.shouldEnemyHitPlayer = False
-        self.game.shouldEnemyShoot = False
+        print('Closing window')
         sys.exit()
 
 
