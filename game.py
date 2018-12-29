@@ -6,6 +6,7 @@ from time import sleep
 from threading import Thread, Lock
 from player_actions import MoveLaser
 from player import Player
+from enemy_actions import MoveEnemy
 
 
 class Game(QWidget):
@@ -17,6 +18,11 @@ class Game(QWidget):
         self.moveLaser = MoveLaser()
         self.moveLaser.calc_done.connect(self.move_laser_up)
         self.moveLaser.start()
+
+        # MoveEnemy 'thread'
+        self.moveEnemy = MoveEnemy()
+        self.moveEnemy.calc_done.connect(self.move_enemy)
+        self.moveEnemy.start()
 
         # Gameplay options
         self.activePlayers = players
@@ -46,7 +52,6 @@ class Game(QWidget):
 
         for i in range(3):
             for j in range(10):
-                print('setting enemy')
                 enemyLabel = QLabel(self)
                 enemyLabel.setPixmap(self.enemyPixmap)
                 # 3 je jer hocemo da budu u sredini
@@ -55,6 +60,15 @@ class Game(QWidget):
                 enemyLabel.setGeometry(positionX, positionY, config.IMAGE_WIDTH, config.IMAGE_HEIGHT)
                 enemyLabel.show()
                 self.enemyLabels.append(enemyLabel)
+
+        self.move_enemy_thread()
+
+    def move_enemy_thread(self):
+        for i in range(len(self.enemyLabels)):
+            self.moveEnemy.add_enemy(self.enemyLabels[i])
+
+    def move_enemy(self, enemyLabel: QLabel, newX, newY):
+        enemyLabel.move(newX, newY)
 
     def try_move_player(self, x):
         if x == config.BOARD_WIDTH - config.IMAGE_WIDTH or x == 0:
@@ -66,7 +80,7 @@ class Game(QWidget):
         laserLabel = QLabel(self)
 
         laserLabel.setPixmap(laserPixmap)
-        laserLabel.setGeometry(startX, startY, config.IMAGE_WIDTH, config.IMAGE_HEIGHT)
+        laserLabel.setGeometry(startX, startY, laserLabel.width(), laserLabel.height())
         laserLabel.show()
 
         self.moveLaser.add_label(laserLabel)
