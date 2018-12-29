@@ -23,19 +23,25 @@ class MoveLaser(QObject):
     def add_label(self, laserLabel: QLabel):
         self.labels.append(laserLabel)
 
+    def remove_label(self, laserLabel: QLabel):
+        self.labels.remove(laserLabel)
+
     def die(self):
         self.threadWorking = False
         self.thread.quit()
 
     def __work__(self):
         while self.threadWorking:
-            for label in self.labels:
-                laserGeo = label.geometry()
-                laserX = laserGeo.x()
-                laserY = laserGeo.y() - config.PLAYER_LASER_SPEED
-                if laserY > 0:
-                    self.calc_done.emit(label, laserX, laserY)
-                elif laserY == 0:
-                    self.calc_done.emit(label, laserX, laserY)
-                    self.labels.remove(label)
-            sleep(0.05)
+            try:
+                for label in self.labels:
+                    laserGeo = label.geometry()
+                    laserX = laserGeo.x()
+                    laserY = laserGeo.y() - config.PLAYER_LASER_SPEED
+                    if laserY > 0:
+                        self.calc_done.emit(label, laserX, laserY)
+                    elif laserY == 0:
+                        self.calc_done.emit(label, laserX, laserY)
+                        self.labels.remove(label)
+                sleep(0.05)
+            except Exception as e:
+                print('Exception in MoveLaser_Thread: ', str(e))

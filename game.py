@@ -7,6 +7,7 @@ from threading import Thread, Lock
 from player_actions import MoveLaser
 from player import Player
 from enemy_actions import MoveEnemy
+from collision_actions import LaserEnemyCollision
 
 
 class Game(QWidget):
@@ -14,15 +15,20 @@ class Game(QWidget):
     def __init__(self, players):
         super().__init__()
 
-        # MoveLaser 'thread'
+        # MoveLaser thread
         self.moveLaser = MoveLaser()
         self.moveLaser.calc_done.connect(self.move_laser_up)
         self.moveLaser.start()
 
-        # MoveEnemy 'thread'
+        # MoveEnemy thread
         self.moveEnemy = MoveEnemy()
         self.moveEnemy.calc_done.connect(self.move_enemy)
         self.moveEnemy.start()
+
+        # LaserEnemyCollision
+        self.laserEnemyCollision = LaserEnemyCollision()
+        self.laserEnemyCollision.collision_detected.connect(self.player_laser_enemy_collide)
+        self.laserEnemyCollision.start()
 
         # Gameplay options
         self.activePlayers = players
@@ -54,24 +60,34 @@ class Game(QWidget):
             for j in range(10):
                 enemyLabel = QLabel(self)
                 enemyLabel.setPixmap(self.enemyPixmap)
-                # 3 je jer hocemo da budu u sredini
                 positionX = config.IMAGE_WIDTH * (j+3)
                 positionY = config.IMAGE_WIDTH * (i+1)
                 enemyLabel.setGeometry(positionX, positionY, config.IMAGE_WIDTH, config.IMAGE_HEIGHT)
                 enemyLabel.show()
                 self.enemyLabels.append(enemyLabel)
 
-        self.move_enemy_thread()
+        self.activate_enemy_threads()
 
-    def move_enemy_thread(self):
+    def activate_enemy_threads(self):
         for i in range(len(self.enemyLabels)):
             self.moveEnemy.add_enemy(self.enemyLabels[i])
+            self.laserEnemyCollision.add_enemy(self.enemyLabels[i])
 
     def move_enemy(self, enemyLabel: QLabel, newX, newY):
         enemyLabel.move(newX, newY)
 
+    def player_laser_enemy_collide(self, enemyLabel: QLabel, laserLabel: QLabel):
+        try:
+            enemyLabel.hide()
+            laserLabel.hide()
+            self.enemyLabels.remove(enemyLabel)
+            self.moveEnemy.remove_enemy(enemyLabel)
+            self.moveLaser.remove_label(laserLabel)
+        except Exception as e:
+            print('Exception in Main_Thread/player_laser_enemy_collide method: ', str(e))
+
     def try_move_player(self, x):
-        if x == config.BOARD_WIDTH - config.IMAGE_WIDTH or x == 0:
+        if (x > (config.BOARD_WIDTH - config.IMAGE_WIDTH)) or (x < 0):
             return False
         return True
 
@@ -80,16 +96,18 @@ class Game(QWidget):
         laserLabel = QLabel(self)
 
         laserLabel.setPixmap(laserPixmap)
-        laserLabel.setGeometry(startX, startY, laserLabel.width(), laserLabel.height())
+        laserLabel.setGeometry(startX, startY, config.IMAGE_WIDTH, config.IMAGE_HEIGHT)
         laserLabel.show()
 
         self.moveLaser.add_label(laserLabel)
+        self.laserEnemyCollision.add_laser(laserLabel)
 
     def move_laser_up(self, laserLabel: QLabel, newX, newY):
         if newY > 0:
             laserLabel.move(newX, newY)
         else:
             laserLabel.hide()
+            self.laserEnemyCollision.remove_laser(laserLabel)
 
     def __update_position__(self, key):
         playerPos = self.playerLabel.geometry()
