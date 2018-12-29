@@ -45,7 +45,7 @@ class MoveEnemy(QObject):
                         self.goLeft = False
                         self.goRight = True
                         break
-                sleep(0.1)
+                sleep(config.ENEMY_MOVE_SLEEP)
 
             elif self.goRight:
                 for enemy in reversed(self.enemies):
@@ -61,4 +61,4 @@ class MoveEnemy(QObject):
                         self.goRight = False
                         self.goLeft = True
                         break
-                sleep(0.1)
+                sleep(config.ENEMY_MOVE_SLEEP)
