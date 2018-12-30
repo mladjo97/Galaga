@@ -75,6 +75,7 @@ class MoveEnemy(QObject):
 class EnemyShoot(QObject):
     can_shoot = pyqtSignal(int, int)
     move_down = pyqtSignal(QLabel, int, int)
+    collision_detected = pyqtSignal(QLabel, QLabel)
 
     def __init__(self):
         super().__init__()
@@ -82,6 +83,7 @@ class EnemyShoot(QObject):
         self.threadWorking = True
         self.enemies = []
         self.lasers = []
+        self.players = []
 
         self.shootingTimer = config.ENEMY_SHOOT_TIMER
 
@@ -103,6 +105,12 @@ class EnemyShoot(QObject):
 
     def remove_laser(self, laserLabel: QLabel):
         self.lasers.remove(laserLabel)
+
+    def add_player(self, playerLabel: QLabel):
+        self.players.append(playerLabel)
+
+    def remove_player(self, playerLabel: QLabel):
+        self.players.remove(playerLabel)
 
     def die(self):
         self.threadWorking = False
@@ -132,6 +140,18 @@ class EnemyShoot(QObject):
                     result.append(enemy)
         return result
 
+    # https://www.geeksforgeeks.org/insertion-sort/
+    def insertion_sort(self, arr):
+        result = arr
+        for i in range(1, len(result)):
+            key = result[i]
+            j = i - 1
+            while j >= 0 and key < result[j]:
+                result[j + 1] = result[j]
+                j -= 1
+            result[j + 1] = key
+        return result
+
     def __work__(self):
         while self.threadWorking:
             # Timer for shooting
@@ -143,9 +163,17 @@ class EnemyShoot(QObject):
             try:
                 if self.shootingTimer == 0:
                     # CHOOSE A SHOOTER
-                    yMax = self.find_ymax()
+                    yArray = []
+                    for enemy in self.enemies:
+                        enemyGeo = enemy.geometry()
+                        enemyY = enemyGeo.y()
+                        if enemyY not in yArray:
+                            yArray.append(enemyY)
+
+                    sortedYs = self.insertion_sort(yArray)
+                    yMax = sortedYs[-1]
                     lowestRowEnemies = self.get_enemies_from_y(yMax)
-                    print('Enemy count in lowestRowEnemies: ', len(lowestRowEnemies))
+                    #print('Enemy count in lowestRowEnemies: ', len(lowestRowEnemies))
 
                     if len(lowestRowEnemies) == 10:
                         # Posto ih imamo 10, mozemo ih sve uzeti i jedan od njih ce da puca
@@ -158,10 +186,32 @@ class EnemyShoot(QObject):
                         self.shootingTimer = config.ENEMY_SHOOT_TIMER
 
                     elif len(lowestRowEnemies) < 10:
-                        print('Imamo manje od 10, moramo jos traziti')
-                        # TO DO:
-                        # Posto ih imamo manje od 10, moramo uzeti sledeci yMax nakon ovog
-                        # i osigurati da im se X ne poklapa jer nema 'friendly-fire'
+                        # Imamo manje od 10, mozda neko iznad moze da puca
+                        y = sortedYs[-2]
+                        upperEnemies = self.get_enemies_from_y(y)
+
+                        for lowerEnemy in lowestRowEnemies:
+                            lowerEnemyGeo = lowerEnemy.geometry()
+                            lowerRowEnemyX = lowerEnemyGeo.x()
+                            for upperEnemy in upperEnemies:
+                                upperEnemyGeo = upperEnemy.geometry()
+                                upperEnemyX = upperEnemyGeo.x()
+                                if lowerRowEnemyX == upperEnemyX:
+                                    upperEnemies.remove(upperEnemy)
+
+                        #print('Len of upper enemies: ', len(upperEnemies))
+                        lowestRowEnemies += upperEnemies
+                        #print('len of all enemies: ', len(lowestRowEnemies))
+
+                        # probaj pucati
+                        randIndex = randint(0, len(lowestRowEnemies)-1)
+                        enemy = lowestRowEnemies[randIndex]
+                        enemyGeo = enemy.geometry()
+                        laserX = enemyGeo.x() + (config.IMAGE_WIDTH // 2)
+                        laserY = enemyGeo.y() + config.IMAGE_HEIGHT
+                        self.can_shoot.emit(laserX, laserY)
+                        self.shootingTimer = config.ENEMY_SHOOT_TIMER
+
                     else:
                         print('Okej, nesto ovde ne radi ...')
 
@@ -169,9 +219,33 @@ class EnemyShoot(QObject):
                 if len(self.lasers) > 0:
                     for laser in self.lasers:
                         laserGeo = laser.geometry()
-                        x = laserGeo.x()
-                        newY = laserGeo.y() + config.ENEMY_LASER_SPEED
-                        self.move_down.emit(laser, x, newY)
+                        laserX = laserGeo.x()
+                        laserY = laserGeo.y() + config.ENEMY_LASER_SPEED
+
+                        # Check for collision with players
+                        if len(self.players) > 0:
+                            for player in self.players:
+                                playerGeo = player.geometry()
+                                playerXStart = playerGeo.x()
+                                playerXEnd = playerGeo.x() + config.IMAGE_WIDTH
+                                playerY = playerGeo.y()
+
+                                xIsEqual = False
+                                yIsEqual = False
+
+                                if playerXStart <= laserX <= playerXEnd:
+                                    xIsEqual = True
+
+                                if laserY == playerY:
+                                    yIsEqual = True
+
+                                if xIsEqual and yIsEqual:
+                                    self.collision_detected.emit(laser, player)
+                                    self.remove_laser(laser)
+                                else:
+                                    self.move_down.emit(laser, laserX, laserY)
+                        else:
+                            self.move_down.emit(laser, laserX, laserY)
 
                 sleep(0.05)
             except Exception as e:
