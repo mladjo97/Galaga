@@ -6,7 +6,7 @@ from time import sleep
 from threading import Thread, Lock
 from player_actions import MoveLaser
 from player import Player
-from enemy_actions import MoveEnemy
+from enemy_actions import MoveEnemy, EnemyShoot
 from collision_actions import LaserEnemyCollision
 
 
@@ -24,6 +24,12 @@ class Game(QWidget):
         self.moveEnemy = MoveEnemy()
         self.moveEnemy.calc_done.connect(self.move_enemy)
         self.moveEnemy.start()
+
+        # MoveEnemy thread
+        self.enemyShoot = EnemyShoot()
+        self.enemyShoot.can_shoot.connect(self.enemy_shoot_laser)
+        self.enemyShoot.move_down.connect(self.move_enemy_laser)
+        self.enemyShoot.start()
 
         # LaserEnemyCollision
         self.laserEnemyCollision = LaserEnemyCollision()
@@ -72,9 +78,26 @@ class Game(QWidget):
         for i in range(len(self.enemyLabels)):
             self.moveEnemy.add_enemy(self.enemyLabels[i])
             self.laserEnemyCollision.add_enemy(self.enemyLabels[i])
+            self.enemyShoot.add_enemy(self.enemyLabels[i])
 
     def move_enemy(self, enemyLabel: QLabel, newX, newY):
         enemyLabel.move(newX, newY)
+
+    def enemy_shoot_laser(self, startX, startY):
+        enemyLaserPixmap = QPixmap('images/laser.png')
+        enemyLaserLabel = QLabel(self)
+        enemyLaserLabel.setPixmap(enemyLaserPixmap)
+        enemyLaserLabel.setGeometry(startX, startY, config.IMAGE_WIDTH, config.IMAGE_HEIGHT)
+        enemyLaserLabel.show()
+        # dodamo laser da moze da se krece ka dole
+        self.enemyShoot.add_laser(enemyLaserLabel)
+
+    def move_enemy_laser(self, enemyLaser: QLabel, newX, newY):
+        if newY < config.BOARD_HEIGHT - config.IMAGE_HEIGHT:
+            enemyLaser.move(newX, newY)
+        else:
+            enemyLaser.hide()
+            self.enemyShoot.remove_laser(enemyLaser)
 
     def player_laser_enemy_collide(self, enemyLabel: QLabel, laserLabel: QLabel):
         try:
@@ -83,6 +106,7 @@ class Game(QWidget):
             self.enemyLabels.remove(enemyLabel)
             self.moveEnemy.remove_enemy(enemyLabel)
             self.moveLaser.remove_label(laserLabel)
+            self.enemyShoot.remove_enemy(enemyLabel)
         except Exception as e:
             print('Exception in Main_Thread/player_laser_enemy_collide method: ', str(e))
 

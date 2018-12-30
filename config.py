@@ -1,9 +1,15 @@
 # Gameplay settings
+GAME_SPEED = 500
+
+# Player setting
 PLAYER_SPEED = 7
 PLAYER_LASER_SPEED = 10
-GAME_SPEED = 500
+
+# Enemy settings
 ENEMY_SPEED = 7
 ENEMY_MOVE_SLEEP = 0.1
+ENEMY_LASER_SPEED = 10
+ENEMY_SHOOT_TIMER = 3
 
 # Board settings
 BOARD_WIDTH = 800

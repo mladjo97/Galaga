@@ -45,7 +45,6 @@ class LaserEnemyCollision(QObject):
                 collided = False
                 for enemy in self.enemies:
                     if collided:
-                        print('Collided = True')
                         break
 
                     enemyGeo = enemy.geometry()
@@ -71,7 +70,6 @@ class LaserEnemyCollision(QObject):
                             yIsEqual = True
 
                         if xIsEqual and yIsEqual:
-                            print('Collision detected')
                             self.remove_enemy(enemy)
                             self.remove_laser(laser)
                             self.collision_detected.emit(enemy, laser)
