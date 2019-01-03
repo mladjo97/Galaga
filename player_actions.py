@@ -4,14 +4,16 @@ from time import sleep
 import config
 
 
-class MoveLaser(QObject):
+class ShootLaser(QObject):
     calc_done = pyqtSignal(QLabel, int, int)
+    collision_detected = pyqtSignal(QLabel, QLabel)
 
     def __init__(self):
         super().__init__()
 
         self.threadWorking = True
-        self.labels = []
+        self.laserLabels = []
+        self.enemyLabels = []
 
         self.thread = QThread()
         self.moveToThread(self.thread)
@@ -20,11 +22,17 @@ class MoveLaser(QObject):
     def start(self):
         self.thread.start()
 
-    def add_label(self, laserLabel: QLabel):
-        self.labels.append(laserLabel)
+    def add_laser(self, laserLabel: QLabel):
+        self.laserLabels.append(laserLabel)
 
-    def remove_label(self, laserLabel: QLabel):
-        self.labels.remove(laserLabel)
+    def remove_laser(self, laserLabel: QLabel):
+        self.laserLabels.remove(laserLabel)
+
+    def add_enemy(self, enemyLabel: QLabel):
+        self.enemyLabels.append(enemyLabel)
+
+    def remove_enemy(self, enemyLabel: QLabel):
+        self.enemyLabels.remove(enemyLabel)
 
     def die(self):
         self.threadWorking = False
@@ -33,7 +41,40 @@ class MoveLaser(QObject):
     def __work__(self):
         while self.threadWorking:
             try:
-                for label in self.labels:
+                # COLLISION
+                for enemy in self.enemyLabels:
+                    # Get enemy geometry
+                    enemyGeo = enemy.geometry()
+                    enemyXStart = enemyGeo.x()
+                    enemyXEnd = enemyGeo.x() + config.IMAGE_WIDTH
+                    enemyY = enemyGeo.y() + config.IMAGE_HEIGHT
+
+                    for laser in self.laserLabels:
+                        # get laser geometry
+                        laserGeo = laser.geometry()
+                        laserXStart = laserGeo.x()
+                        laserXEnd = laserGeo.x() + laserGeo.width()
+                        laserX = laserXStart + ((laserXEnd - laserXStart) // 2)
+                        laserY = laserGeo.y() + laserGeo.height()
+
+                        # Check for collision
+                        xIsEqual = False
+                        yIsEqual = False
+
+                        if enemyXStart <= laserX <= enemyXEnd:
+                            xIsEqual = True
+
+                        if laserY == enemyY:
+                            yIsEqual = True
+                        if xIsEqual and yIsEqual:
+                            print('Collision detected')
+                            self.remove_enemy(enemy)
+                            self.remove_laser(laser)
+                            self.collision_detected.emit(enemy, laser)
+                            break
+
+                # MOVE LABELS UP
+                for label in self.laserLabels:
                     laserGeo = label.geometry()
                     laserX = laserGeo.x()
                     laserY = laserGeo.y() - config.PLAYER_LASER_SPEED
@@ -41,7 +82,7 @@ class MoveLaser(QObject):
                         self.calc_done.emit(label, laserX, laserY)
                     elif laserY == 0:
                         self.calc_done.emit(label, laserX, laserY)
-                        self.labels.remove(label)
+                        self.laserLabels.remove(label)
                 sleep(0.05)
             except Exception as e:
-                print('Exception in MoveLaser_Thread: ', str(e))
+                print('Exception in ShootLaser_Thread: ', str(e))
