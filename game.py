@@ -36,7 +36,7 @@ class Game(QWidget):
         self.enemyAttack = EnemyAttack()
         self.enemyAttack.can_attack.connect(self.enemy_attack_player)
         self.enemyAttack.move_down.connect(self.move_enemy_down)
-        #self.enemyShoot.collision_detected.connect(self.enemy_hit_player)
+        self.enemyAttack.player_collision.connect(self.enemy_attack_player_hit)
         self.enemyAttack.start()
 
         # Gameplay options
@@ -99,6 +99,17 @@ class Game(QWidget):
 
         self.activate_enemy_threads()
 
+    def activate_enemy_threads(self):
+        # add player for collision detection first
+        self.enemyShoot.add_player(self.playerLabel)
+        self.enemyAttack.add_player(self.playerLabel)
+        # add enemies for other stuff
+        for i in range(len(self.enemyLabels)):
+            self.moveEnemy.add_enemy(self.enemyLabels[i])
+            self.enemyShoot.add_enemy(self.enemyLabels[i])
+            self.shootLaser.add_enemy(self.enemyLabels[i])
+            self.enemyAttack.add_enemy(self.enemyLabels[i])
+
     def update_lives_label(self):
         lives = self.player.get_lives()
         if lives == 3:
@@ -116,18 +127,6 @@ class Game(QWidget):
             # ukloni igraca
             self.enemyShoot.remove_player(self.playerLabel)
             self.playerLabel.hide()
-
-    def activate_enemy_threads(self):
-        # add player for collision detection first
-        self.enemyShoot.add_player(self.playerLabel)
-        self.enemyAttack.add_player(self.playerLabel)
-        # add enemies for other stuff
-        for i in range(len(self.enemyLabels)):
-            self.moveEnemy.add_enemy(self.enemyLabels[i])
-            self.enemyShoot.add_enemy(self.enemyLabels[i])
-            self.shootLaser.add_enemy(self.enemyLabels[i])
-            self.enemyAttack.add_enemy(self.enemyLabels[i])
-
 
     def move_enemy(self, enemyLabel: QLabel, newX, newY):
         enemyLabel.move(newX, newY)
@@ -164,6 +163,12 @@ class Game(QWidget):
         else:
             enemyLabel.hide()
             self.enemyAttack.remove_moving_enemy(enemyLabel)
+
+    def enemy_attack_player_hit(self, enemyLabel: QLabel):
+        print('Collision detected. Removing enemy')
+        enemyLabel.hide()
+        self.player.lower_lives()
+        self.update_lives_label()
 
     def player_laser_enemy_collide(self, enemyLabel: QLabel, laserLabel: QLabel):
         try:

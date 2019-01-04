@@ -255,7 +255,7 @@ class EnemyShoot(QObject):
 class EnemyAttack(QObject):
     can_attack = pyqtSignal(QLabel)
     move_down = pyqtSignal(QLabel, int, int)
-    collision_detected = pyqtSignal(QLabel, QLabel)
+    player_collision = pyqtSignal(QLabel)
 
     def __init__(self):
         super().__init__()
@@ -330,6 +330,7 @@ class EnemyAttack(QObject):
     def __work__(self):
         while self.threadWorking:
 
+            collided = False
             # Timer for falling
             if (self.fallingTimer - 0.1) > 0:
                 self.fallingTimer -= 0.05
@@ -356,9 +357,35 @@ class EnemyAttack(QObject):
                         self.add_moving_enemy(enemy)
                         self.fallingTimer = config.ENEMY_FALL_TIMER
 
-                for movingEnemy in self.movingEnemies:
-                    enemyGeo = movingEnemy.geometry()
-                    self.move_down.emit(movingEnemy,enemyGeo.x(), enemyGeo.y() + config.ENEMY_FALLING_SPEED)
+                # move down for attack
+                if not collided:
+                    for movingEnemy in self.movingEnemies:
+                        enemyGeo = movingEnemy.geometry()
+                        enemyXStart = enemyGeo.x()
+                        enemyXEnd = enemyGeo.x() + config.IMAGE_WIDTH
+                        enemyY = enemyGeo.y() + config.IMAGE_HEIGHT
+                        enemyXArray = range(enemyXStart, enemyXEnd)
+                        self.move_down.emit(movingEnemy, enemyGeo.x(), enemyGeo.y() + config.ENEMY_FALLING_SPEED)
+
+                        # check for collision with player
+                        for player in self.players:
+                            playerGeo = player.geometry()
+                            playerXStart = playerGeo.x()
+                            playerXEnd = playerGeo.x() + config.IMAGE_WIDTH
+                            playerYStart = playerGeo.y()
+                            playerYEnd = playerGeo.y() + config.IMAGE_HEIGHT
+                            playerXArray = range(playerXStart, playerXEnd)
+                            playerYArray = range(playerYStart, playerYEnd)
+
+                            # drugi nacin detekcije kolizije, moooozda
+                            if enemyY in playerYArray:
+                                for enemyX in enemyXArray:
+                                    if enemyX in playerXArray:
+                                        print('COLLISION !!!!')
+                                        self.player_collision.emit(movingEnemy)
+                                        self.remove_moving_enemy(movingEnemy)
+                                        collided = True
+                                        break
 
                 sleep(0.05)
             except Exception as e:
