@@ -87,7 +87,8 @@ class ShootLaser(QObject):
                         self.calc_done.emit(label, laserX, laserY)
                     elif laserY == 0:
                         self.calc_done.emit(label, laserX, laserY)
-                        self.laserLabels.remove(label)
+                    #    self.laserLabels.remove(label)  #--------------------------------ovde puca, nije potrebbno
+
 
                 sleep(0.05)
             except Exception as e:
