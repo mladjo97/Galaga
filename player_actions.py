@@ -41,8 +41,12 @@ class ShootLaser(QObject):
     def __work__(self):
         while self.threadWorking:
             try:
+                collided = False
                 # COLLISION
                 for enemy in self.enemyLabels:
+                    if collided:
+                        break
+
                     # Get enemy geometry
                     enemyGeo = enemy.geometry()
                     enemyXStart = enemyGeo.x()
@@ -55,7 +59,7 @@ class ShootLaser(QObject):
                         laserXStart = laserGeo.x()
                         laserXEnd = laserGeo.x() + laserGeo.width()
                         laserX = laserXStart + ((laserXEnd - laserXStart) // 2)
-                        laserY = laserGeo.y() + laserGeo.height()
+                        laserY = laserGeo.y()
 
                         # Check for collision
                         xIsEqual = False
@@ -67,10 +71,11 @@ class ShootLaser(QObject):
                         if laserY == enemyY:
                             yIsEqual = True
                         if xIsEqual and yIsEqual:
-                            print('Collision detected')
+                            print('Collision detected for y: {} {}'.format(enemyY, laserY))
                             self.remove_enemy(enemy)
                             self.remove_laser(laser)
                             self.collision_detected.emit(enemy, laser)
+                            collided = True
                             break
 
                 # MOVE LABELS UP
@@ -83,6 +88,7 @@ class ShootLaser(QObject):
                     elif laserY == 0:
                         self.calc_done.emit(label, laserX, laserY)
                         self.laserLabels.remove(label)
+
                 sleep(0.05)
             except Exception as e:
                 print('Exception in ShootLaser_Thread: ', str(e))

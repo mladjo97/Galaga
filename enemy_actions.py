@@ -250,3 +250,116 @@ class EnemyShoot(QObject):
                 sleep(0.05)
             except Exception as e:
                 print('Exception in EnemyShoot_Thread: ', str(e))
+
+
+class EnemyAttack(QObject):
+    can_attack = pyqtSignal(QLabel)
+    move_down = pyqtSignal(QLabel, int, int)
+    collision_detected = pyqtSignal(QLabel, QLabel)
+
+    def __init__(self):
+        super().__init__()
+
+        self.threadWorking = True
+        self.enemies = []
+        self.lasers = []
+        self.players = []
+        self.movingEnemies = []
+
+        self.fallingTimer = config.ENEMY_FALL_TIMER
+
+        self.thread = QThread()
+        self.moveToThread(self.thread)
+        self.thread.started.connect(self.__work__)
+
+    def start(self):
+        self.thread.start()
+
+    def add_enemy(self, enemyLabel: QLabel):
+        self.enemies.append(enemyLabel)
+
+    def remove_enemy(self, enemyLabel: QLabel):
+        self.enemies.remove(enemyLabel)
+
+    def add_moving_enemy(self, enemyLabel: QLabel):
+        self.movingEnemies.append(enemyLabel)
+
+    def remove_moving_enemy(self, enemyLabel: QLabel):
+        self.movingEnemies.remove(enemyLabel)
+
+    def add_laser(self, laserLabel: QLabel):
+        self.lasers.append(laserLabel)
+
+    def remove_laser(self, laserLabel: QLabel):
+        self.lasers.remove(laserLabel)
+
+    def add_player(self, playerLabel: QLabel):
+        self.players.append(playerLabel)
+
+    def remove_player(self, playerLabel: QLabel):
+        self.players.remove(playerLabel)
+
+    def die(self):
+        self.threadWorking = False
+        self.thread.quit()
+
+    def find_ymax(self):
+        if len(self.enemies) > 0:
+            enemy = self.enemies[0]
+            enemyGeo = enemy.geometry()
+            yMax = enemyGeo.y()
+            for i in range(1, len(self.enemies)):
+                enemy = self.enemies[i]
+                enemyGeo = enemy.geometry()
+                y = enemyGeo.y()
+                if yMax < y:
+                    yMax = y
+            return yMax
+
+    def get_enemies_from_y(self, yParam):
+        result = []
+        if len(self.enemies) > 0:
+            for i in range(len(self.enemies)):
+                enemy = self.enemies[i]
+                enemyGeo = enemy.geometry()
+                y = enemyGeo.y()
+                if y == yParam:
+                    result.append(enemy)
+        return result
+
+    def __work__(self):
+        while self.threadWorking:
+
+            # Timer for falling
+            if (self.fallingTimer - 0.1) > 0:
+                self.fallingTimer -= 0.05
+            else:
+                self.fallingTimer = 0
+
+            # Try attacking
+            try:
+                if self.fallingTimer == 0:
+                    yMax = self.find_ymax()
+                    print('Found yMax at: ', yMax)
+                    yRowEnemies = self.get_enemies_from_y(yMax)
+                    print('Found #{} enemies at y: {}'.format(len(yRowEnemies), yMax))
+
+                    # nasumicno jedan napada iz poslednjeg reda
+                    if len(yRowEnemies) > 0:
+                        randIndex = randint(0, len(yRowEnemies)-1)
+                        enemy = yRowEnemies[randIndex]
+                        enemyGeo = enemy.geometry()
+                        print('Enemy attacking - x: {} y: {}'.format(enemyGeo.x(), enemyGeo.y()))
+                        # try to remove from moving enemies
+                        self.can_attack.emit(enemy)
+                        self.remove_enemy(enemy)
+                        self.add_moving_enemy(enemy)
+                        self.fallingTimer = config.ENEMY_FALL_TIMER
+
+                for movingEnemy in self.movingEnemies:
+                    enemyGeo = movingEnemy.geometry()
+                    self.move_down.emit(movingEnemy,enemyGeo.x(), enemyGeo.y() + config.ENEMY_FALLING_SPEED)
+
+                sleep(0.05)
+            except Exception as e:
+                print('Exception in EnemyAttack_Thread {EnemyAttack}: ', str(e))

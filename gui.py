@@ -56,6 +56,7 @@ class GameWindow(QMainWindow):
             self.game.moveEnemy.die()
             self.game.laserEnemyCollision.die()
             self.game.enemyShoot.die()
+            self.game.enemyAttack.die()
         except Exception as e:
             print('Exception while trying to close threads: {}', str(e))
 

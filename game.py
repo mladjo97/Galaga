@@ -6,7 +6,7 @@ from time import sleep
 from threading import Thread, Lock
 from player_actions import ShootLaser
 from player import Player
-from enemy_actions import MoveEnemy, EnemyShoot
+from enemy_actions import MoveEnemy, EnemyShoot, EnemyAttack
 
 
 class Game(QWidget):
@@ -31,6 +31,13 @@ class Game(QWidget):
         self.enemyShoot.move_down.connect(self.move_enemy_laser)
         self.enemyShoot.collision_detected.connect(self.enemy_hit_player)
         self.enemyShoot.start()
+
+        # EnemyAttack thread
+        self.enemyAttack = EnemyAttack()
+        self.enemyAttack.can_attack.connect(self.enemy_attack_player)
+        self.enemyAttack.move_down.connect(self.move_enemy_down)
+        #self.enemyShoot.collision_detected.connect(self.enemy_hit_player)
+        self.enemyAttack.start()
 
         # Gameplay options
         self.activePlayers = players
@@ -113,12 +120,13 @@ class Game(QWidget):
     def activate_enemy_threads(self):
         # add player for collision detection first
         self.enemyShoot.add_player(self.playerLabel)
-        # add enemies for other stuff]
-        print('ok')
+        self.enemyAttack.add_player(self.playerLabel)
+        # add enemies for other stuff
         for i in range(len(self.enemyLabels)):
             self.moveEnemy.add_enemy(self.enemyLabels[i])
             self.enemyShoot.add_enemy(self.enemyLabels[i])
             self.shootLaser.add_enemy(self.enemyLabels[i])
+            self.enemyAttack.add_enemy(self.enemyLabels[i])
 
 
     def move_enemy(self, enemyLabel: QLabel, newX, newY):
@@ -145,6 +153,18 @@ class Game(QWidget):
         self.player.lower_lives()
         self.update_lives_label()
 
+    def enemy_attack_player(self, enemyLabel: QLabel):
+        print('Stopping enemy from moving')
+        self.moveEnemy.remove_enemy(enemyLabel)
+        self.enemyShoot.remove_enemy(enemyLabel)
+
+    def move_enemy_down(self, enemyLabel: QLabel, newX, newY):
+        if newY < config.BOARD_HEIGHT - config.IMAGE_HEIGHT:
+            enemyLabel.move(newX, newY)
+        else:
+            enemyLabel.hide()
+            self.enemyAttack.remove_moving_enemy(enemyLabel)
+
     def player_laser_enemy_collide(self, enemyLabel: QLabel, laserLabel: QLabel):
         try:
             enemyLabel.hide()
@@ -152,6 +172,7 @@ class Game(QWidget):
             self.enemyLabels.remove(enemyLabel)
             self.moveEnemy.remove_enemy(enemyLabel)
             self.enemyShoot.remove_enemy(enemyLabel)
+            self.enemyAttack.remove_enemy(enemyLabel)
         except Exception as e:
             print('Exception in Main_Thread/player_laser_enemy_collide method: ', str(e))
 
