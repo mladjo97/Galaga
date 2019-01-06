@@ -187,8 +187,16 @@ class EnemyShoot(QObject):
 
                     elif len(lowestRowEnemies) < 10:
                         # Imamo manje od 10, mozda neko iznad moze da puca
-                        y = sortedYs[-2]
+                        #postoji bolji nacin da se ovaj problem resi, za sad neka bude ovako :D
+                        try:
+                            y = sortedYs[-2]
+                        except:
+                            print("Ostao je samo jedan red")
+                            y = sortedYs[-1]
+
+                       # print("Evo ga: " , sortedYs[-2])
                         upperEnemies = self.get_enemies_from_y(y)
+
 
                         for lowerEnemy in lowestRowEnemies:
                             lowerEnemyGeo = lowerEnemy.geometry()
