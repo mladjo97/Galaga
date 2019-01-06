@@ -222,7 +222,10 @@ class EnemyShoot(QObject):
 
                     else:
                         print('Okej, nesto ovde ne radi ...')
+            except Exception as e:
+                print('Exception in EnemyShoot_Thread: ', str(e))
 
+            try:
                 # MOVE LASER DOWN
                 if len(self.lasers) > 0:
                     for laser in self.lasers:
@@ -255,9 +258,11 @@ class EnemyShoot(QObject):
                         else:
                             self.move_down.emit(laser, laserX, laserY)
 
-                sleep(0.05)
             except Exception as e:
-                print('Exception in EnemyShoot_Thread: ', str(e))
+                print('Exception in Moving_Laser: ', str(e))
+
+            sleep(0.05)
+
 
 
 class EnemyAttack(QObject):
