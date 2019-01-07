@@ -1,4 +1,4 @@
-from PyQt5.QtCore import pyqtSignal, QThread, QObject
+from PyQt5.QtCore import pyqtSignal, QThread, QObject, QTimer
 from PyQt5.QtWidgets import QLabel
 from time import sleep
 import numpy as np
@@ -85,7 +85,11 @@ class EnemyShoot(QObject):
         self.lasers = []
         self.players = []
 
-        self.shootingTimer = config.ENEMY_SHOOT_TIMER
+        self.canShoot = False
+        self.shootingTimer = QTimer()
+        self.shootingTimer.setInterval(config.ENEMY_SHOOT_TIMER)
+        self.shootingTimer.timeout.connect(self.alert_shooting)
+        self.shootingTimer.start()
 
         self.thread = QThread()
         self.moveToThread(self.thread)
@@ -152,16 +156,14 @@ class EnemyShoot(QObject):
             result[j + 1] = key
         return result
 
+    def alert_shooting(self):
+        if not self.canShoot:
+            self.canShoot = True
+
     def __work__(self):
         while self.threadWorking:
-            # Timer for shooting
-            if (self.shootingTimer - 0.1) > 0:
-                self.shootingTimer -= 0.05
-            else:
-                self.shootingTimer = 0
-
             try:
-                if self.shootingTimer == 0:
+                if self.canShoot:
                     # CHOOSE A SHOOTER
                     yArray = []
                     for enemy in self.enemies:
@@ -183,20 +185,19 @@ class EnemyShoot(QObject):
                         laserX = enemyGeo.x() + (config.IMAGE_WIDTH // 2)
                         laserY = enemyGeo.y() + config.IMAGE_HEIGHT
                         self.can_shoot.emit(laserX, laserY)
-                        self.shootingTimer = config.ENEMY_SHOOT_TIMER
+                        self.canShoot = False
 
                     elif len(lowestRowEnemies) < 10:
                         # Imamo manje od 10, mozda neko iznad moze da puca
                         #postoji bolji nacin da se ovaj problem resi, za sad neka bude ovako :D
                         try:
                             y = sortedYs[-2]
-                        except:
-                            print("Ostao je samo jedan red")
+                        except Exception as e:
+                            print("Ostao je samo jedan red: ", str(e))
                             y = sortedYs[-1]
 
-                       # print("Evo ga: " , sortedYs[-2])
+                        # print("Evo ga: " , sortedYs[-2])
                         upperEnemies = self.get_enemies_from_y(y)
-
 
                         for lowerEnemy in lowestRowEnemies:
                             lowerEnemyGeo = lowerEnemy.geometry()
@@ -218,7 +219,7 @@ class EnemyShoot(QObject):
                         laserX = enemyGeo.x() + (config.IMAGE_WIDTH // 2)
                         laserY = enemyGeo.y() + config.IMAGE_HEIGHT
                         self.can_shoot.emit(laserX, laserY)
-                        self.shootingTimer = config.ENEMY_SHOOT_TIMER
+                        self.canShoot = False
 
                     else:
                         print('Okej, nesto ovde ne radi ...')
@@ -264,7 +265,6 @@ class EnemyShoot(QObject):
             sleep(0.05)
 
 
-
 class EnemyAttack(QObject):
     can_attack = pyqtSignal(QLabel)
     move_down = pyqtSignal(QLabel, int, int)
@@ -279,7 +279,11 @@ class EnemyAttack(QObject):
         self.players = []
         self.movingEnemies = []
 
-        self.fallingTimer = config.ENEMY_FALL_TIMER
+        self.canAttack = False
+        self.fallingTimer = QTimer()
+        self.fallingTimer.setInterval(config.ENEMY_FALL_TIMER)
+        self.fallingTimer.timeout.connect(self.alert_attack)
+        self.fallingTimer.start()
 
         self.thread = QThread()
         self.moveToThread(self.thread)
@@ -340,35 +344,34 @@ class EnemyAttack(QObject):
                     result.append(enemy)
         return result
 
+    def alert_attack(self):
+        if not self.canAttack:
+            self.canAttack = True
+
     def __work__(self):
         while self.threadWorking:
 
             collided = False
-            # Timer for falling
-            if (self.fallingTimer - 0.1) > 0:
-                self.fallingTimer -= 0.05
-            else:
-                self.fallingTimer = 0
-
             # Try attacking
             try:
-                if self.fallingTimer == 0:
-                    yMax = self.find_ymax()
-                    print('Found yMax at: ', yMax)
-                    yRowEnemies = self.get_enemies_from_y(yMax)
-                    print('Found #{} enemies at y: {}'.format(len(yRowEnemies), yMax))
+                if self.canAttack:
+                    if len(self.enemies) > 0:
+                        yMax = self.find_ymax()
+                        print('Found yMax at: ', yMax)
+                        yRowEnemies = self.get_enemies_from_y(yMax)
+                        print('Found #{} enemies at y: {}'.format(len(yRowEnemies), yMax))
 
-                    # nasumicno jedan napada iz poslednjeg reda
-                    if len(yRowEnemies) > 0:
-                        randIndex = randint(0, len(yRowEnemies)-1)
-                        enemy = yRowEnemies[randIndex]
-                        enemyGeo = enemy.geometry()
-                        print('Enemy attacking - x: {} y: {}'.format(enemyGeo.x(), enemyGeo.y()))
-                        # try to remove from moving enemies
-                        self.can_attack.emit(enemy)
-                        self.remove_enemy(enemy)
-                        self.add_moving_enemy(enemy)
-                        self.fallingTimer = config.ENEMY_FALL_TIMER
+                        # nasumicno jedan napada iz poslednjeg reda
+                        if len(yRowEnemies) > 0:
+                            randIndex = randint(0, len(yRowEnemies)-1)
+                            enemy = yRowEnemies[randIndex]
+                            enemyGeo = enemy.geometry()
+                            print('Enemy attacking - x: {} y: {}'.format(enemyGeo.x(), enemyGeo.y()))
+                            # try to remove from moving enemies
+                            self.can_attack.emit(enemy)
+                            self.remove_enemy(enemy)
+                            self.add_moving_enemy(enemy)
+                            self.canAttack = False
 
                 # move down for attack
                 if not collided:

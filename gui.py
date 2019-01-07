@@ -52,9 +52,8 @@ class GameWindow(QMainWindow):
     def closeEvent(self, event):
         try:
             print('Closing all threads')
-            self.game.moveLaser.die()
+            self.game.shootLaser.die()
             self.game.moveEnemy.die()
-            self.game.laserEnemyCollision.die()
             self.game.enemyShoot.die()
             self.game.enemyAttack.die()
         except Exception as e:
