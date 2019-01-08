@@ -390,7 +390,7 @@ class EnemyAttack(QObject):
                         enemyY = enemyGeo.y() + config.IMAGE_HEIGHT
                         enemyXArray = range(enemyXStart, enemyXEnd)
                         self.move_down.emit(movingEnemy, enemyGeo.x(), enemyGeo.y() + config.ENEMY_FALLING_SPEED)
-#------------------------------------------------------------------------------------------------------------------------------------------------------------
+#-----------------------------------------------------------------------------------------------------------------------
                         #check for collision with player_laser
                         for laser in self.player_lasers:
                             # get laser geometry
@@ -418,7 +418,7 @@ class EnemyAttack(QObject):
                                 self.collision_detected.emit(movingEnemy, laser)
                                 collided = True
                                 break
-# ------------------------------------------------------------------------------------------------------------------------------------------------------------
+# ----------------------------------------------------------------------------------------------------------------------
                         # check for collision with player
                         for player in self.players:
                             playerGeo = player.geometry()
