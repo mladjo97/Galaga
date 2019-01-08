@@ -269,6 +269,7 @@ class EnemyAttack(QObject):
     can_attack = pyqtSignal(QLabel)
     move_down = pyqtSignal(QLabel, int, int)
     player_collision = pyqtSignal(QLabel)
+    collision_detected = pyqtSignal(QLabel , QLabel)
 
     def __init__(self):
         super().__init__()
@@ -278,6 +279,7 @@ class EnemyAttack(QObject):
         self.lasers = []
         self.players = []
         self.movingEnemies = []
+        self.player_lasers = []
 
         self.canAttack = False
         self.fallingTimer = QTimer()
@@ -309,6 +311,12 @@ class EnemyAttack(QObject):
 
     def remove_laser(self, laserLabel: QLabel):
         self.lasers.remove(laserLabel)
+
+    def add_player_laser(self, laserLabel: QLabel):
+        self.player_lasers.append(laserLabel)
+
+    def remove_player_laser(self, laserLabel: QLabel):
+        self.player_lasers.remove(laserLabel)
 
     def add_player(self, playerLabel: QLabel):
         self.players.append(playerLabel)
@@ -382,7 +390,35 @@ class EnemyAttack(QObject):
                         enemyY = enemyGeo.y() + config.IMAGE_HEIGHT
                         enemyXArray = range(enemyXStart, enemyXEnd)
                         self.move_down.emit(movingEnemy, enemyGeo.x(), enemyGeo.y() + config.ENEMY_FALLING_SPEED)
+#------------------------------------------------------------------------------------------------------------------------------------------------------------
+                        #check for collision with player_laser
+                        for laser in self.player_lasers:
+                            # get laser geometry
+                            laserGeo = laser.geometry()
+                            laserXStart = laserGeo.x()
+                            laserXEnd = laserGeo.x() + laserGeo.width()
+                            laserX = laserXStart + ((laserXEnd - laserXStart) // 2)
+                            laserY = laserGeo.y()
 
+                            # Check for collision
+                            xIsEqual = False
+                            yIsEqual = False
+
+                            if enemyXStart <= laserX <= enemyXEnd:
+                                xIsEqual = True
+
+                            if laserY == enemyY:
+                                yIsEqual = True
+
+                            if xIsEqual and yIsEqual:
+                                print('Collision with Player_laser detected for y: {} {}'.format(enemyY, laserY))
+                                #self.remove_moving_enemy(movingEnemy)
+                               # self.remove_enemy(movingEnemy)
+                               # self.remove_laser(laser)
+                                self.collision_detected.emit(movingEnemy, laser)
+                                collided = True
+                                break
+# ------------------------------------------------------------------------------------------------------------------------------------------------------------
                         # check for collision with player
                         for player in self.players:
                             playerGeo = player.geometry()

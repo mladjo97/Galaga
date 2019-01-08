@@ -37,6 +37,7 @@ class Game(QWidget):
         self.enemyAttack.can_attack.connect(self.enemy_attack_player)
         self.enemyAttack.move_down.connect(self.move_enemy_down)
         self.enemyAttack.player_collision.connect(self.enemy_attack_player_hit)
+        self.enemyAttack.collision_detected.connect(self.player_laser_moving_enemy_collide)
         self.enemyAttack.start()
 
         # Gameplay options
@@ -170,6 +171,15 @@ class Game(QWidget):
         self.player.lower_lives()
         self.update_lives_label()
 
+    def player_laser_moving_enemy_collide(self, enemyLabel: QLabel, laserLabel: QLabel):
+        try:
+            enemyLabel.hide()
+            laserLabel.hide()
+            self.enemyAttack.remove_player_laser(laserLabel)
+            self.enemyAttack.remove_moving_enemy(enemyLabel)
+        except Exception as e:
+            print('Exception in Main_Thread/player_laser_moving_enemy_collide method: ', str(e))
+
     def player_laser_enemy_collide(self, enemyLabel: QLabel, laserLabel: QLabel):
         try:
             enemyLabel.hide()
@@ -195,6 +205,7 @@ class Game(QWidget):
         laserLabel.show()
 
         self.shootLaser.add_laser(laserLabel)
+        self.enemyAttack.add_player_laser(laserLabel)
 
     def move_laser_up(self, laserLabel: QLabel, newX, newY):
         if newY > 0:
