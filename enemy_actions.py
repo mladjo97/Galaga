@@ -37,6 +37,7 @@ class MoveEnemy(QObject):
     def __work__(self):
         while self.threadWorking:
             try:
+
                 # movement logic
                 if self.goLeft:
                     for enemy in self.enemies:
@@ -72,13 +73,17 @@ class MoveEnemy(QObject):
                 print('Exception in MoveEnemy_Thread: ', str(e))
 
 
+
 class EnemyShoot(QObject):
     can_shoot = pyqtSignal(int, int)
     move_down = pyqtSignal(QLabel, int, int)
     collision_detected = pyqtSignal(QLabel, QLabel)
+    next_level = pyqtSignal(int, int)
 
     def __init__(self):
         super().__init__()
+
+        self.current_level = 1
 
         self.threadWorking = True
         self.enemies = []
@@ -225,6 +230,11 @@ class EnemyShoot(QObject):
                         print('Okej, nesto ovde ne radi ...')
             except Exception as e:
                 print('Exception in EnemyShoot_Thread: ', str(e))
+                #i ovo moze bolje , ali za sad nek bude ovako
+                # next level ?
+                print("Enemies 0 in MoveEnemy")
+                self.current_level += 1
+                self.next_level.emit(3, self.current_level)
 
             try:
                 # MOVE LASER DOWN
@@ -362,6 +372,7 @@ class EnemyAttack(QObject):
             collided = False
             # Try attacking
             try:
+
                 if self.canAttack:
                     if len(self.enemies) > 0:
                         yMax = self.find_ymax()

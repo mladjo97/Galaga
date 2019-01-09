@@ -1,5 +1,6 @@
 # Gameplay settings
 GAME_SPEED = 500
+NEXT_LEVEL_SLEEP = 4000
 
 # Player setting
 PLAYER_SPEED = 7

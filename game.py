@@ -25,11 +25,14 @@ class Game(QWidget):
         self.moveEnemy.calc_done.connect(self.move_enemy)
         self.moveEnemy.start()
 
+
         # EnemyShoot thread
         self.enemyShoot = EnemyShoot()
         self.enemyShoot.can_shoot.connect(self.enemy_shoot_laser)
         self.enemyShoot.move_down.connect(self.move_enemy_laser)
         self.enemyShoot.collision_detected.connect(self.enemy_hit_player)
+        # NextLevel
+        self.enemyShoot.next_level.connect(self.Next_level)
         self.enemyShoot.start()
 
         # EnemyAttack thread
@@ -57,7 +60,30 @@ class Game(QWidget):
         self.enemyPixmap = self.enemyPixmap.scaledToHeight(config.IMAGE_HEIGHT - 20)
 
         self.__init_ui__()
+#---------------------------------------------------------------------------------------------------------------------------------------------------------
+    def Next_level(self, lives, current_level):
 
+        # Set enemy start positions
+        self.enemyLabels = []
+
+        for i in range(3):
+            for j in range(10):
+                enemyLabel = QLabel(self)
+                enemyLabel.setPixmap(self.enemyPixmap)
+                positionX = config.IMAGE_WIDTH * (j + 3)
+                positionY = config.IMAGE_WIDTH * (i + 1)
+                enemyLabel.setGeometry(positionX, positionY, config.IMAGE_WIDTH, config.IMAGE_HEIGHT)
+                enemyLabel.show()
+                self.enemyLabels.append(enemyLabel)
+
+        # add enemies for other stuff
+        for i in range(len(self.enemyLabels)):
+            self.moveEnemy.add_enemy(self.enemyLabels[i])
+            self.enemyShoot.add_enemy(self.enemyLabels[i])
+            self.shootLaser.add_enemy(self.enemyLabels[i])
+            self.enemyAttack.add_enemy(self.enemyLabels[i])
+
+# ---------------------------------------------------------------------------------------------------------------------------------------------------------
     def __init_ui__(self):
 
         # Set background
