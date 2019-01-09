@@ -180,7 +180,6 @@ class EnemyShoot(QObject):
                     sortedYs = self.insertion_sort(yArray)
                     yMax = sortedYs[-1]
                     lowestRowEnemies = self.get_enemies_from_y(yMax)
-                    #print('Enemy count in lowestRowEnemies: ', len(lowestRowEnemies))
 
                     if len(lowestRowEnemies) == 10:
                         # Posto ih imamo 10, mozemo ih sve uzeti i jedan od njih ce da puca
@@ -194,7 +193,7 @@ class EnemyShoot(QObject):
 
                     elif len(lowestRowEnemies) < 10:
                         # Imamo manje od 10, mozda neko iznad moze da puca
-                        #postoji bolji nacin da se ovaj problem resi, za sad neka bude ovako :D
+                        # postoji bolji nacin da se ovaj problem resi, za sad neka bude ovako :D
                         try:
                             y = sortedYs[-2]
                         except Exception as e:
@@ -213,9 +212,7 @@ class EnemyShoot(QObject):
                                 if lowerRowEnemyX == upperEnemyX:
                                     upperEnemies.remove(upperEnemy)
 
-                        #print('Len of upper enemies: ', len(upperEnemies))
                         lowestRowEnemies += upperEnemies
-                        #print('len of all enemies: ', len(lowestRowEnemies))
 
                         # probaj pucati
                         randIndex = randint(0, len(lowestRowEnemies)-1)
@@ -232,9 +229,9 @@ class EnemyShoot(QObject):
                 print('Exception in EnemyShoot_Thread: ', str(e))
                 #i ovo moze bolje , ali za sad nek bude ovako
                 # next level ?
-                print("Enemies 0 in MoveEnemy")
-                self.current_level += 1
-                self.next_level.emit(3, self.current_level)
+                # print("Enemies 0 in MoveEnemy")
+                # self.current_level += 1
+                # self.next_level.emit(3, self.current_level)
 
             try:
                 # MOVE LASER DOWN
@@ -279,7 +276,7 @@ class EnemyAttack(QObject):
     can_attack = pyqtSignal(QLabel)
     move_down = pyqtSignal(QLabel, int, int)
     player_collision = pyqtSignal(QLabel)
-    collision_detected = pyqtSignal(QLabel , QLabel)
+    laser_collision = pyqtSignal(QLabel, QLabel)
 
     def __init__(self):
         super().__init__()
@@ -289,7 +286,7 @@ class EnemyAttack(QObject):
         self.lasers = []
         self.players = []
         self.movingEnemies = []
-        self.player_lasers = []
+        self.playerLasers = []
 
         self.canAttack = False
         self.fallingTimer = QTimer()
@@ -323,10 +320,10 @@ class EnemyAttack(QObject):
         self.lasers.remove(laserLabel)
 
     def add_player_laser(self, laserLabel: QLabel):
-        self.player_lasers.append(laserLabel)
+        self.playerLasers.append(laserLabel)
 
     def remove_player_laser(self, laserLabel: QLabel):
-        self.player_lasers.remove(laserLabel)
+        self.playerLasers.remove(laserLabel)
 
     def add_player(self, playerLabel: QLabel):
         self.players.append(playerLabel)
@@ -368,24 +365,20 @@ class EnemyAttack(QObject):
 
     def __work__(self):
         while self.threadWorking:
-
             collided = False
-            # Try attacking
-            try:
 
+            try:
+                # Try attacking
                 if self.canAttack:
                     if len(self.enemies) > 0:
                         yMax = self.find_ymax()
-                        print('Found yMax at: ', yMax)
                         yRowEnemies = self.get_enemies_from_y(yMax)
-                        print('Found #{} enemies at y: {}'.format(len(yRowEnemies), yMax))
 
                         # nasumicno jedan napada iz poslednjeg reda
                         if len(yRowEnemies) > 0:
                             randIndex = randint(0, len(yRowEnemies)-1)
                             enemy = yRowEnemies[randIndex]
                             enemyGeo = enemy.geometry()
-                            print('Enemy attacking - x: {} y: {}'.format(enemyGeo.x(), enemyGeo.y()))
                             # try to remove from moving enemies
                             self.can_attack.emit(enemy)
                             self.remove_enemy(enemy)
@@ -401,35 +394,27 @@ class EnemyAttack(QObject):
                         enemyY = enemyGeo.y() + config.IMAGE_HEIGHT
                         enemyXArray = range(enemyXStart, enemyXEnd)
                         self.move_down.emit(movingEnemy, enemyGeo.x(), enemyGeo.y() + config.ENEMY_FALLING_SPEED)
-#-----------------------------------------------------------------------------------------------------------------------
-                        #check for collision with player_laser
-                        for laser in self.player_lasers:
-                            # get laser geometry
-                            laserGeo = laser.geometry()
-                            laserXStart = laserGeo.x()
-                            laserXEnd = laserGeo.x() + laserGeo.width()
-                            laserX = laserXStart + ((laserXEnd - laserXStart) // 2)
-                            laserY = laserGeo.y()
 
-                            # Check for collision
-                            xIsEqual = False
-                            yIsEqual = False
+                        # check for collision with player laser
+                        for playerLaser in self.playerLasers:
+                            playerLaserGeo = playerLaser.geometry()
+                            playerLaserXStart = playerLaserGeo.x()
+                            playerLaserXEnd = playerLaserGeo.x() + config.IMAGE_WIDTH
+                            playerLaserYStart = playerLaserGeo.y()
+                            playerLaserYEnd = playerLaserGeo.y() + config.IMAGE_HEIGHT
+                            playerLaserXArray = range(playerLaserXStart, playerLaserXEnd)
+                            playerLaserYArray = range(playerLaserYStart, playerLaserYEnd)
 
-                            if enemyXStart <= laserX <= enemyXEnd:
-                                xIsEqual = True
+                            # drugi nacin detekcije kolizije, moooozda
+                            if enemyY in playerLaserYArray:
+                                for enemyX in enemyXArray:
+                                    if enemyX in playerLaserXArray:
+                                        self.laser_collision.emit(movingEnemy, playerLaser)
+                                        self.remove_player_laser(playerLaser)
+                                        self.remove_moving_enemy(movingEnemy)
+                                        collided = True
+                                        break
 
-                            if laserY == enemyY:
-                                yIsEqual = True
-
-                            if xIsEqual and yIsEqual:
-                                print('Collision with Player_laser detected for y: {} {}'.format(enemyY, laserY))
-                                #self.remove_moving_enemy(movingEnemy)
-                               # self.remove_enemy(movingEnemy)
-                               # self.remove_laser(laser)
-                                self.collision_detected.emit(movingEnemy, laser)
-                                collided = True
-                                break
-# ----------------------------------------------------------------------------------------------------------------------
                         # check for collision with player
                         for player in self.players:
                             playerGeo = player.geometry()
@@ -444,7 +429,6 @@ class EnemyAttack(QObject):
                             if enemyY in playerYArray:
                                 for enemyX in enemyXArray:
                                     if enemyX in playerXArray:
-                                        print('COLLISION !!!!')
                                         self.player_collision.emit(movingEnemy)
                                         self.remove_moving_enemy(movingEnemy)
                                         collided = True
