@@ -4,6 +4,7 @@ from PyQt5.QtCore import pyqtSignal, Qt
 import game
 import config
 import sys
+from key_notifier import KeyNotifier
 
 
 class GameWindow(QMainWindow):
@@ -14,6 +15,10 @@ class GameWindow(QMainWindow):
         self.setCentralWidget(self.centralWidget)
         self.mainMenuWidget = MainMenu()
         self.menu()
+
+        self.key_notifier = KeyNotifier()
+        self.key_notifier.key_signal.connect(self.do_key_press)
+        self.key_notifier.start()
 
         self.setWindowTitle('Galaga')
         self.setWindowIcon(QIcon('images/ship.png'))
@@ -40,11 +45,17 @@ class GameWindow(QMainWindow):
         self.game = game.Game(1)
         self.setCentralWidget(self.game)
 
-    def keyPressEvent(self, event):
+    def do_key_press(self, key):
         try:
-            self.game.__update_position__(event.key())
+            self.game.__update_position__(key)
         except Exception as e:
             print('Exception: {}'.format(str(e)))
+
+    def keyPressEvent(self, event):
+        self.key_notifier.add_key(event.key())
+
+    def keyReleaseEvent(self, event):
+        self.key_notifier.rem_key(event.key())
 
     def quit(self):
         sys.exit()
