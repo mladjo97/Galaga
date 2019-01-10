@@ -18,6 +18,7 @@ class Game(QWidget):
         self.shootLaser = ShootLaser()
         self.shootLaser.calc_done.connect(self.move_laser_up)
         self.shootLaser.collision_detected.connect(self.player_laser_enemy_collide)
+        self.shootLaser.moving_collision_detected.connect(self.player_laser_moving_enemy_collide)
         self.shootLaser.start()
 
         # MoveEnemy thread
@@ -39,7 +40,6 @@ class Game(QWidget):
         self.enemyAttack.can_attack.connect(self.enemy_attack_player)
         self.enemyAttack.move_down.connect(self.move_enemy_down)
         self.enemyAttack.player_collision.connect(self.enemy_attack_player_hit)
-        self.enemyAttack.laser_collision.connect(self.player_laser_moving_enemy_collide)
         self.enemyAttack.start()
 
         # Gameplay options
@@ -179,6 +179,8 @@ class Game(QWidget):
 
     def enemy_attack_player(self, enemyLabel: QLabel):
         self.moveEnemy.remove_enemy(enemyLabel)
+        self.shootLaser.add_falling_enemy(enemyLabel)
+        self.shootLaser.remove_enemy(enemyLabel)
         self.enemyShoot.remove_enemy(enemyLabel)
 
     def move_enemy_down(self, enemyLabel: QLabel, newX, newY):
@@ -187,30 +189,33 @@ class Game(QWidget):
         else:
             enemyLabel.hide()
             self.enemyAttack.remove_moving_enemy(enemyLabel)
+            self.shootLaser.remove_falling_enemy(enemyLabel)
 
     def enemy_attack_player_hit(self, enemyLabel: QLabel):
         enemyLabel.hide()
         self.player.lower_lives()
         self.update_lives_label()
 
-    def player_laser_moving_enemy_collide(self, enemyLabel: QLabel, laserLabel: QLabel):
-        try:
-            enemyLabel.hide()
-            laserLabel.hide()
-            # remove laser and enemy from other thread checking
-            self.shootLaser.remove_enemy(enemyLabel)
-            self.shootLaser.remove_laser(laserLabel)
-        except Exception as e:
-            print('Exception in Main_Thread/player_laser_moving_enemy_collide method: ', str(e))
-
     def player_laser_enemy_collide(self, enemyLabel: QLabel, laserLabel: QLabel):
         try:
             enemyLabel.hide()
             laserLabel.hide()
+            print('pogodio')
             self.enemyLabels.remove(enemyLabel)
             self.moveEnemy.remove_enemy(enemyLabel)
             self.enemyShoot.remove_enemy(enemyLabel)
             self.enemyAttack.remove_enemy(enemyLabel)
+
+        except Exception as e:
+            print('Exception in Main_Thread/player_laser_enemy_collide method: ', str(e))
+
+    def player_laser_moving_enemy_collide(self, enemyLabel: QLabel, laserLabel: QLabel):
+        try:
+            enemyLabel.hide()
+            laserLabel.hide()
+            print('pogodio MOVING')
+            self.enemyLabels.remove(enemyLabel)
+            self.enemyAttack.remove_moving_enemy(enemyLabel)
         except Exception as e:
             print('Exception in Main_Thread/player_laser_enemy_collide method: ', str(e))
 
@@ -228,7 +233,6 @@ class Game(QWidget):
         laserLabel.show()
 
         self.shootLaser.add_laser(laserLabel)
-        self.enemyAttack.add_player_laser(laserLabel)
 
     def move_laser_up(self, laserLabel: QLabel, newX, newY):
         if newY > 0:

@@ -7,6 +7,7 @@ import config
 class ShootLaser(QObject):
     calc_done = pyqtSignal(QLabel, int, int)
     collision_detected = pyqtSignal(QLabel, QLabel)
+    moving_collision_detected = pyqtSignal(QLabel, QLabel)
 
     def __init__(self):
         super().__init__()
@@ -14,6 +15,7 @@ class ShootLaser(QObject):
         self.threadWorking = True
         self.laserLabels = []
         self.enemyLabels = []
+        self.fallingEnemies = []
 
         self.thread = QThread()
         self.moveToThread(self.thread)
@@ -34,15 +36,27 @@ class ShootLaser(QObject):
     def remove_enemy(self, enemyLabel: QLabel):
         self.enemyLabels.remove(enemyLabel)
 
+    def add_falling_enemy(self, enemyLabel: QLabel):
+        self.fallingEnemies.append(enemyLabel)
+
+    def remove_falling_enemy(self, enemyLabel: QLabel):
+        self.fallingEnemies.remove(enemyLabel)
+
     def die(self):
         self.threadWorking = False
         self.thread.quit()
 
     def __work__(self):
         while self.threadWorking:
+
+            #print('Lasers: ', len(self.laserLabels))
+            #print('Enemies: ', len(self.enemyLabels))
+            #print('Moving enemies: ', len(self.fallingEnemies))
+
             try:
                 collided = False
-                # COLLISION
+
+                # Collision with enemies
                 for enemy in self.enemyLabels:
                     if collided:
                         break
@@ -78,17 +92,42 @@ class ShootLaser(QObject):
                             collided = True
                             break
 
+                # Collision with falling enemy
+                if not collided:
+                    # check for collision with falling enemy
+                    for fallingEnemy in self.fallingEnemies:
+                        fallingEnemyGeo = fallingEnemy.geometry()
+                        fallingEnemyXStart = fallingEnemyGeo.x()
+                        fallingEnemyXEnd = fallingEnemyGeo.x() + config.IMAGE_WIDTH
+                        fallingEnemyY = fallingEnemyGeo.y() + config.IMAGE_HEIGHT
+                        fallingEnemyXArray = range(fallingEnemyXStart, fallingEnemyXEnd)
+
+                        # check for collision with player
+                        for laser in self.laserLabels:
+                            laserGeo = laser.geometry()
+                            laserXStart = laserGeo.x()
+                            laserXEnd = laserGeo.x() + config.IMAGE_WIDTH
+                            laserYStart = laserGeo.y()
+                            laserYEnd = laserGeo.y() + config.IMAGE_HEIGHT
+                            laserXArray = range(laserXStart, laserXEnd)
+                            laserYArray = range(laserYStart, laserYEnd)
+
+                            # drugi nacin detekcije kolizije, moooozda
+                            if fallingEnemyY in laserYArray:
+                                for fallingEnemyX in fallingEnemyXArray:
+                                    if fallingEnemyX in laserXArray:
+                                        self.remove_falling_enemy(fallingEnemy)
+                                        self.remove_laser(laser)
+                                        self.moving_collision_detected.emit(fallingEnemy, laser)
+                                        collided = True
+                                        break
+
                 # MOVE LABELS UP
                 for label in self.laserLabels:
                     laserGeo = label.geometry()
                     laserX = laserGeo.x()
                     laserY = laserGeo.y() - config.PLAYER_LASER_SPEED
-                    if laserY > 0:
-                        self.calc_done.emit(label, laserX, laserY)
-                    elif laserY == 0:
-                        self.calc_done.emit(label, laserX, laserY)
-                    #    self.laserLabels.remove(label)  #--------------------------------ovde puca, nije potrebbno
-
+                    self.calc_done.emit(label, laserX, laserY)
 
                 sleep(0.05)
             except Exception as e:

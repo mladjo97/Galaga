@@ -37,7 +37,6 @@ class MoveEnemy(QObject):
     def __work__(self):
         while self.threadWorking:
             try:
-
                 # movement logic
                 if self.goLeft:
                     for enemy in self.enemies:
@@ -181,6 +180,9 @@ class EnemyShoot(QObject):
                     yMax = sortedYs[-1]
                     lowestRowEnemies = self.get_enemies_from_y(yMax)
 
+                   # if len(lowestRowEnemies) == 0:
+
+
                     if len(lowestRowEnemies) == 10:
                         # Posto ih imamo 10, mozemo ih sve uzeti i jedan od njih ce da puca
                         randIndex = randint(0, 9)
@@ -194,10 +196,10 @@ class EnemyShoot(QObject):
                     elif len(lowestRowEnemies) < 10:
                         # Imamo manje od 10, mozda neko iznad moze da puca
                         # postoji bolji nacin da se ovaj problem resi, za sad neka bude ovako :D
-                        try:
+                        if len(sortedYs) > 1:
                             y = sortedYs[-2]
-                        except Exception as e:
-                            print("Ostao je samo jedan red: ", str(e))
+                        else:
+                            print("Ostao je samo jedan red: ")
                             y = sortedYs[-1]
 
                         # print("Evo ga: " , sortedYs[-2])
@@ -283,10 +285,8 @@ class EnemyAttack(QObject):
 
         self.threadWorking = True
         self.enemies = []
-        self.lasers = []
         self.players = []
         self.movingEnemies = []
-        self.playerLasers = []
 
         self.canAttack = False
         self.fallingTimer = QTimer()
@@ -312,18 +312,6 @@ class EnemyAttack(QObject):
 
     def remove_moving_enemy(self, enemyLabel: QLabel):
         self.movingEnemies.remove(enemyLabel)
-
-    def add_laser(self, laserLabel: QLabel):
-        self.lasers.append(laserLabel)
-
-    def remove_laser(self, laserLabel: QLabel):
-        self.lasers.remove(laserLabel)
-
-    def add_player_laser(self, laserLabel: QLabel):
-        self.playerLasers.append(laserLabel)
-
-    def remove_player_laser(self, laserLabel: QLabel):
-        self.playerLasers.remove(laserLabel)
 
     def add_player(self, playerLabel: QLabel):
         self.players.append(playerLabel)
@@ -366,7 +354,8 @@ class EnemyAttack(QObject):
     def __work__(self):
         while self.threadWorking:
             collided = False
-
+            print("Enemy length: " , len(self.enemies))
+            print("Faling enemy length: ",len(self.movingEnemies))
             try:
                 # Try attacking
                 if self.canAttack:
@@ -382,6 +371,7 @@ class EnemyAttack(QObject):
                             # try to remove from moving enemies
                             self.can_attack.emit(enemy)
                             self.remove_enemy(enemy)
+                            print("Obrisao sam ga !!!!!!!!!!")
                             self.add_moving_enemy(enemy)
                             self.canAttack = False
 
@@ -394,26 +384,6 @@ class EnemyAttack(QObject):
                         enemyY = enemyGeo.y() + config.IMAGE_HEIGHT
                         enemyXArray = range(enemyXStart, enemyXEnd)
                         self.move_down.emit(movingEnemy, enemyGeo.x(), enemyGeo.y() + config.ENEMY_FALLING_SPEED)
-
-                        # check for collision with player laser
-                        for playerLaser in self.playerLasers:
-                            playerLaserGeo = playerLaser.geometry()
-                            playerLaserXStart = playerLaserGeo.x()
-                            playerLaserXEnd = playerLaserGeo.x() + config.IMAGE_WIDTH
-                            playerLaserYStart = playerLaserGeo.y()
-                            playerLaserYEnd = playerLaserGeo.y() + config.IMAGE_HEIGHT
-                            playerLaserXArray = range(playerLaserXStart, playerLaserXEnd)
-                            playerLaserYArray = range(playerLaserYStart, playerLaserYEnd)
-
-                            # drugi nacin detekcije kolizije, moooozda
-                            if enemyY in playerLaserYArray:
-                                for enemyX in enemyXArray:
-                                    if enemyX in playerLaserXArray:
-                                        self.laser_collision.emit(movingEnemy, playerLaser)
-                                        self.remove_player_laser(playerLaser)
-                                        self.remove_moving_enemy(movingEnemy)
-                                        collided = True
-                                        break
 
                         # check for collision with player
                         for player in self.players:
@@ -433,7 +403,6 @@ class EnemyAttack(QObject):
                                         self.remove_moving_enemy(movingEnemy)
                                         collided = True
                                         break
-
                 sleep(0.05)
             except Exception as e:
                 print('Exception in EnemyAttack_Thread {EnemyAttack}: ', str(e))

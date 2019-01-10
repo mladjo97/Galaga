@@ -1,6 +1,7 @@
-from PyQt5.QtCore import QThread, QObject, pyqtSignal, pyqtSlot
+from PyQt5.QtCore import QThread, QObject, pyqtSignal, pyqtSlot, QTimer, Qt
 
 import time
+import config
 
 
 class KeyNotifier(QObject):
@@ -12,6 +13,12 @@ class KeyNotifier(QObject):
 
         self.keys = []
         self.is_done = False
+
+        self.canShoot = False
+        self.cooldownTimer = QTimer()
+        self.cooldownTimer.setInterval(config.PLAYER_LASER_COOLDOWN)
+        self.cooldownTimer.timeout.connect(self.alert_cooldown)
+        self.cooldownTimer.start()
 
         self.thread = QThread()
         # move the Worker object to the Thread object
@@ -39,6 +46,10 @@ class KeyNotifier(QObject):
         self.is_done = True
         self.thread.quit()
 
+    def alert_cooldown(self):
+        if not self.canShoot:
+            self.canShoot = True
+
     @pyqtSlot()
     def __work__(self):
         """
@@ -46,5 +57,10 @@ class KeyNotifier(QObject):
         """
         while not self.is_done:
             for k in self.keys:
-                self.key_signal.emit(k)
+                if k == Qt.Key_Space:
+                    if self.canShoot:
+                        self.key_signal.emit(k)
+                        self.canShoot = False
+                else:
+                    self.key_signal.emit(k)
             time.sleep(0.05)
