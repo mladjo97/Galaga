@@ -1,15 +1,16 @@
-from PyQt5.QtWidgets import QWidget, QLabel, QHBoxLayout
-from PyQt5.QtGui import QPixmap, QImage, QFont, QGuiApplication
-from PyQt5.QtCore import Qt
+from PyQt5.QtWidgets import QWidget, QLabel
+from PyQt5.QtGui import QPixmap, QFont
+from PyQt5.QtCore import Qt, pyqtSignal
 import config
-from time import sleep
-from threading import Thread, Lock
 from player_actions import ShootLaser
 from player import Player
 from enemy_actions import MoveEnemy, EnemyShoot, EnemyAttack
+from time import sleep
 
 
 class Game(QWidget):
+
+    gameOverSignal = pyqtSignal()
 
     def __init__(self, players):
         super().__init__()
@@ -196,44 +197,58 @@ class Game(QWidget):
         if enemyLabel in self.enemyLabels:
             self.enemyLabels.remove(enemyLabel)
 
-    def update_lives_label(self):
-        lives = self.player.get_lives()
-        if lives == 3:
-            self.playerLivesLabelText = "<font color='white'>Lives: 3</font>"
-            self.playerLivesLabel.setText(self.playerLivesLabelText)
-        elif lives == 2:
-            self.playerLivesLabelText = "<font color='white'>Lives: 2</font>"
-            self.playerLivesLabel.setText(self.playerLivesLabelText)
-        elif lives == 1:
-            self.playerLivesLabelText = "<font color='white'>Lives: 1</font>"
-            self.playerLivesLabel.setText(self.playerLivesLabelText)
-        else:
-            self.playerLivesLabelText = "<font color='white'>Lives: 0</font>"
-            self.playerLivesLabel.setText(self.playerLivesLabelText)
-            # ukloni igraca
-            self.enemyShoot.remove_player(self.playerLabel)
-            self.enemyAttack.remove_player(self.playerLabel)
-            self.playerLabel.hide()
+    def update_lives_label(self, player):
+        if player == 1:
+            lives = self.player.get_lives()
+            if lives == 3:
+                self.playerLivesLabelText = "<font color='white'>Lives: 3</font>"
+                self.playerLivesLabel.setText(self.playerLivesLabelText)
+            elif lives == 2:
+                self.playerLivesLabelText = "<font color='white'>Lives: 2</font>"
+                self.playerLivesLabel.setText(self.playerLivesLabelText)
+            elif lives == 1:
+                self.playerLivesLabelText = "<font color='white'>Lives: 1</font>"
+                self.playerLivesLabel.setText(self.playerLivesLabelText)
+            else:
+                self.playerLivesLabelText = "<font color='white'>Lives: 0</font>"
+                self.playerLivesLabel.setText(self.playerLivesLabelText)
+                # ukloni igraca
+                self.enemyShoot.remove_player(self.playerLabel)
+                self.enemyAttack.remove_player(self.playerLabel)
+                self.playerLabel.hide()
+                self.activePlayers -= 1
 
         # Check for second player
-        if self.startPlayers == 2:
-            lives = self.playerTwo.get_lives()
-            if lives == 3:
-                self.playerTwoLivesLabelText = "<font color='white'>Lives: 3</font>"
-                self.playerTwoLivesLabel.setText(self.playerTwoLivesLabelText)
-            elif lives == 2:
-                self.playerTwoLivesLabelText = "<font color='white'>Lives: 2</font>"
-                self.playerTwoLivesLabel.setText(self.playerTwoLivesLabelText)
-            elif lives == 1:
-                self.playerTwoLivesLabelText = "<font color='white'>Lives: 1</font>"
-                self.playerTwoLivesLabel.setText(self.playerTwoLivesLabelText)
-            else:
-                self.playerTwoLivesLabelText = "<font color='white'>Lives: 0</font>"
-                self.playerTwoLivesLabel.setText(self.playerTwoLivesLabelText)
-                # ukloni igraca
-                self.enemyShoot.remove_player(self.playerTwoLabel)
-                self.enemyAttack.remove_player(self.playerTwoLabel)
-                self.playerTwoLabel.hide()
+        if player == 2:
+            if self.startPlayers == 2:
+                lives = self.playerTwo.get_lives()
+                if lives == 3:
+                    self.playerTwoLivesLabelText = "<font color='white'>Lives: 3</font>"
+                    self.playerTwoLivesLabel.setText(self.playerTwoLivesLabelText)
+                elif lives == 2:
+                    self.playerTwoLivesLabelText = "<font color='white'>Lives: 2</font>"
+                    self.playerTwoLivesLabel.setText(self.playerTwoLivesLabelText)
+                elif lives == 1:
+                    self.playerTwoLivesLabelText = "<font color='white'>Lives: 1</font>"
+                    self.playerTwoLivesLabel.setText(self.playerTwoLivesLabelText)
+                else:
+                    self.playerTwoLivesLabelText = "<font color='white'>Lives: 0</font>"
+                    self.playerTwoLivesLabel.setText(self.playerTwoLivesLabelText)
+                    # ukloni igraca
+                    self.enemyShoot.remove_player(self.playerTwoLabel)
+                    self.enemyAttack.remove_player(self.playerTwoLabel)
+                    self.playerTwoLabel.hide()
+                    self.activePlayers -= 1
+
+        # check if game over
+        if self.activePlayers == 0:
+            self.displayGameOver()
+
+    def displayGameOver(self):
+        self.gameOverSignal.emit()
+
+    def hideEnemy(self, enemyLabel: QLabel):
+        enemyLabel.hide()
 
     def move_enemy(self, enemyLabel: QLabel, newX, newY):
         enemyLabel.move(newX, newY)
@@ -254,10 +269,19 @@ class Game(QWidget):
             enemyLaser.hide()
             self.enemyShoot.remove_laser(enemyLaser)
 
-    def enemy_hit_player(self, laserLabel: QLabel):
+    def enemy_hit_player(self, laserLabel: QLabel, playerLabel: QLabel):
         laserLabel.hide()
-        self.player.lower_lives()
-        self.update_lives_label()
+
+        if self.startPlayers == 2:
+            if self.player.playerLabel == playerLabel:
+                self.player.lower_lives()
+                self.update_lives_label(1)
+            if self.playerTwo.playerLabel == playerLabel:
+                self.playerTwo.lower_lives()
+                self.update_lives_label(2)
+        else:
+            self.player.lower_lives()
+            self.update_lives_label(1)
 
     def enemy_attack_player(self, enemyLabel: QLabel):
         self.moveEnemy.remove_enemy(enemyLabel)
@@ -272,20 +296,22 @@ class Game(QWidget):
             enemyLabel.hide()
             self.enemyAttack.remove_moving_enemy(enemyLabel)
             self.shootLaser.remove_falling_enemy(enemyLabel)
+            self.remove_enemy_label(enemyLabel)
 
     def enemy_attack_player_hit(self, enemyLabel: QLabel, playerLabel: QLabel):
         enemyLabel.hide()
+        self.remove_enemy_label(enemyLabel)
 
         if self.startPlayers == 2:
             if self.player.playerLabel == playerLabel:
                 self.player.lower_lives()
-                self.update_lives_label()
+                self.update_lives_label(1)
             if self.playerTwo.playerLabel == playerLabel:
                 self.playerTwo.lower_lives()
-                self.update_lives_label()
+                self.update_lives_label(2)
         else:
             self.player.lower_lives()
-            self.update_lives_label()
+            self.update_lives_label(1)
 
     def player_laser_enemy_collide(self, enemyLabel: QLabel, laserLabel: QLabel):
         try:
@@ -331,6 +357,7 @@ class Game(QWidget):
             self.shootLaser.remove_laser(laserLabel)
 
     def __update_position__(self, key):
+
         playerPos = self.playerLabel.geometry()
 
         if key == Qt.Key_D:

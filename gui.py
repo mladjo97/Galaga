@@ -1,6 +1,6 @@
-from PyQt5.QtWidgets import QMainWindow, QDesktopWidget, QStackedWidget, QWidget, QPushButton
+from PyQt5.QtWidgets import QMainWindow, QDesktopWidget, QStackedWidget, QWidget, QPushButton, QApplication
 from PyQt5.QtGui import QIcon
-from PyQt5.QtCore import pyqtSignal, Qt
+from PyQt5.QtCore import pyqtSignal
 import game
 import config
 import sys
@@ -8,8 +8,13 @@ from key_notifier import KeyNotifier
 
 
 class GameWindow(QMainWindow):
+
+    startAgain = pyqtSignal()
+
     def __init__(self):
         super().__init__()
+
+        print('Started new game window')
 
         self.centralWidget = QStackedWidget()
         self.setCentralWidget(self.centralWidget)
@@ -44,14 +49,20 @@ class GameWindow(QMainWindow):
         self.resize(config.BOARD_WIDTH, config.BOARD_HEIGHT)
         self.center()
         self.game = game.Game(1)
+        self.game.gameOverSignal.connect(self.gameOver)
         self.setCentralWidget(self.game)
 
     def playTwoPlayersGame(self):
         self.resize(config.BOARD_WIDTH, config.BOARD_HEIGHT)
         self.center()
         self.game = game.Game(2)
+        self.game.gameOverSignal.connect(self.gameOver)
         self.setCentralWidget(self.game)
 
+    def gameOver(self):
+        print('GAME IS OVER')
+
+        self.startAgain.emit()
 
     def do_key_press(self, key):
         try:
@@ -68,6 +79,17 @@ class GameWindow(QMainWindow):
     def quit(self):
         sys.exit()
 
+    def stopThreads(self):
+        try:
+            print('Closing all threads from Galagaa')
+            self.game.shootLaser.die()
+            self.game.moveEnemy.die()
+            self.game.enemyShoot.die()
+            self.game.enemyAttack.die()
+            self.key_notifier.die()
+        except Exception as e:
+            print('Exception while trying to close threads: {}', str(e))
+
     def closeEvent(self, event):
         try:
             print('Closing all threads')
@@ -75,6 +97,7 @@ class GameWindow(QMainWindow):
             self.game.moveEnemy.die()
             self.game.enemyShoot.die()
             self.game.enemyAttack.die()
+            self.key_notifier.die()
         except Exception as e:
             print('Exception while trying to close threads: {}', str(e))
 

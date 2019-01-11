@@ -262,8 +262,10 @@ class EnemyShoot(QObject):
                         laserY = laserGeo.y() + self.enemyLaserSpeed
 
                         # Check for collision with players
+                        #print('Broj igraca: ', len(self.players))
                         if len(self.players) > 0:
                             for player in self.players:
+
                                 playerGeo = player.geometry()
                                 playerXStart = playerGeo.x()
                                 playerXEnd = playerGeo.x() + config.IMAGE_WIDTH
