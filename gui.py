@@ -30,7 +30,8 @@ class GameWindow(QMainWindow):
         self.move((screen.width() - size.width()) / 2, (screen.height() - size.height()) / 2)
 
     def menu(self):
-        self.mainMenuWidget.playGameSignal.connect(self.play)
+        self.mainMenuWidget.playOnePlayerGameSignal.connect(self.playOnePlayerGame)
+        self.mainMenuWidget.playTwoPlayerGameSignal.connect(self.playTwoPlayersGame)
         self.mainMenuWidget.quitGameSignal.connect(self.quit)
 
         self.centralWidget.addWidget(self.mainMenuWidget)
@@ -39,11 +40,18 @@ class GameWindow(QMainWindow):
         self.resize(240, 250)
         self.center()
 
-    def play(self):
+    def playOnePlayerGame(self):
         self.resize(config.BOARD_WIDTH, config.BOARD_HEIGHT)
         self.center()
         self.game = game.Game(1)
         self.setCentralWidget(self.game)
+
+    def playTwoPlayersGame(self):
+        self.resize(config.BOARD_WIDTH, config.BOARD_HEIGHT)
+        self.center()
+        self.game = game.Game(2)
+        self.setCentralWidget(self.game)
+
 
     def do_key_press(self, key):
         try:
@@ -75,8 +83,10 @@ class GameWindow(QMainWindow):
 
 class MainMenu(QWidget):
 
-    playGameSignal = pyqtSignal()
+    playOnePlayerGameSignal = pyqtSignal()
+    playTwoPlayerGameSignal = pyqtSignal()
     quitGameSignal = pyqtSignal()
+
 
     def __init__(self):
         super(MainMenu, self).__init__()
@@ -85,11 +95,17 @@ class MainMenu(QWidget):
         button_height = 50
         button_offset = 25
 
-        play_button = QPushButton('Play', self)
+        play_button = QPushButton('One Player', self)
         play_button.setFixedWidth(button_width)
         play_button.setFixedHeight(button_height)
         play_button.move(button_offset, (button_offset * 1) + (button_height * 0))
-        play_button.clicked.connect(self.play)
+        play_button.clicked.connect(self.playOnePlayer)
+
+        play_twoplayers_button = QPushButton('Two Players', self)
+        play_twoplayers_button.setFixedWidth(button_width)
+        play_twoplayers_button.setFixedHeight(button_height)
+        play_twoplayers_button.move(button_offset, (button_offset * 2) + (button_height * 1))
+        play_twoplayers_button.clicked.connect(self.playTwoPlayers)
 
         quit_button = QPushButton('Quit', self)
         quit_button.setFixedWidth(button_width)
@@ -99,8 +115,11 @@ class MainMenu(QWidget):
 
         self.show()
 
-    def play(self):
-        self.playGameSignal.emit()
+    def playOnePlayer(self):
+        self.playOnePlayerGameSignal.emit()
+
+    def playTwoPlayers(self):
+        self.playTwoPlayerGameSignal.emit()
 
     def quit(self):
         self.quitGameSignal.emit()

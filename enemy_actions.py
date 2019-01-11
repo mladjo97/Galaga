@@ -295,7 +295,7 @@ class EnemyShoot(QObject):
 class EnemyAttack(QObject):
     can_attack = pyqtSignal(QLabel)
     move_down = pyqtSignal(QLabel, int, int)
-    player_collision = pyqtSignal(QLabel)
+    player_collision = pyqtSignal(QLabel, QLabel)
     laser_collision = pyqtSignal(QLabel, QLabel)
 
     def __init__(self):
@@ -419,7 +419,7 @@ class EnemyAttack(QObject):
                             if enemyY in playerYArray:
                                 for enemyX in enemyXArray:
                                     if enemyX in playerXArray:
-                                        self.player_collision.emit(movingEnemy)
+                                        self.player_collision.emit(movingEnemy, player)
                                         self.remove_moving_enemy(movingEnemy)
                                         collided = True
                                         break

@@ -14,6 +14,7 @@ class Game(QWidget):
     def __init__(self, players):
         super().__init__()
 
+        print('Players to play: ', players)
 
         # ShootLaser thread
         self.shootLaser = ShootLaser()
@@ -26,7 +27,6 @@ class Game(QWidget):
         self.moveEnemy = MoveEnemy()
         self.moveEnemy.calc_done.connect(self.move_enemy)
         self.moveEnemy.start()
-
 
         # EnemyShoot thread
         self.enemyShoot = EnemyShoot()
@@ -45,14 +45,18 @@ class Game(QWidget):
 
         # Gameplay options
         self.activePlayers = players
+        self.startPlayers = players
         self.playerSpeed = config.PLAYER_SPEED
 
-        # Add player one
+        # Add background pixmap
         self.backgroundPixmap = QPixmap('images/background.png')
 
         # Add player one
         self.playerPixmap = QPixmap('images/ship.png')
-        self.player = Player()
+
+        # add second player
+        if self.startPlayers == 2:
+            self.playerTwoPixmap = QPixmap('images/ship.png')
 
         # Set enemy pixmaps
         self.enemyPixmap = QPixmap('images/enemy.png')
@@ -60,6 +64,86 @@ class Game(QWidget):
         self.enemyPixmap = self.enemyPixmap.scaledToHeight(config.IMAGE_HEIGHT - 20)
 
         self.__init_ui__()
+
+    def __init_ui__(self):
+
+        # Set background
+        numOfLabelsX = config.BOARD_WIDTH // config.IMAGE_WIDTH
+        numOfLabelsY = config.BOARD_HEIGHT // config.IMAGE_HEIGHT
+
+        for x in range(numOfLabelsX):
+            for y in range(numOfLabelsY):
+                backgroundLabel = QLabel(self)
+                backgroundLabel.setPixmap(self.backgroundPixmap)
+                backgroundLabelX = config.IMAGE_WIDTH * x
+                backgroundLabelY = config.IMAGE_HEIGHT * y
+                backgroundLabel.setGeometry(backgroundLabelX, backgroundLabelY, config.IMAGE_WIDTH, config.IMAGE_HEIGHT)
+
+        # Set lives label
+        self.playerLivesLabel = QLabel(self)
+        self.playerLivesLabelText = "<font color='white'>Lives: 3</font>"
+        self.playerLivesLabel.setText(self.playerLivesLabelText)
+        self.playerLivesLabel.setFont(QFont('Times', 16, QFont.Bold))
+
+        # Set second player lives label
+        if self.startPlayers == 2:
+            self.playerTwoLivesLabel = QLabel(self)
+            self.playerTwoLivesLabelText = "<font color='white'>Lives: 3</font>"
+            self.playerTwoLivesLabel.setText(self.playerTwoLivesLabelText)
+            self.playerTwoLivesLabel.setFont(QFont('Times', 16, QFont.Bold))
+            self.playerTwoLivesLabel.setGeometry(config.BOARD_WIDTH - 100, 0, 100, 30)
+
+        #Set level label
+        self.gameLevel = QLabel(self)
+        self.gameLevel.setFont(QFont("Times", 16, QFont.Bold))
+        levelX = config.BOARD_WIDTH // 2 - 50  # centar
+        levelY = 0
+        self.gameLevel.setGeometry(levelX, levelY, 100, 30)
+        self.update_level(1)
+
+        # Set player start positions
+        if self.startPlayers == 1:
+            self.playerLabel = QLabel(self)
+            self.playerLabel.setPixmap(self.playerPixmap)
+            playerLabelX = config.BOARD_WIDTH // 2 - config.IMAGE_WIDTH
+            playerLabelY = config.BOARD_HEIGHT - config.IMAGE_HEIGHT
+            self.playerLabel.setGeometry(playerLabelX, playerLabelY, config.IMAGE_WIDTH, config.IMAGE_HEIGHT)
+            self.player = Player(self.playerLabel)
+
+        elif self.startPlayers == 2:
+            # set player 1 start position
+            self.playerLabel = QLabel(self)
+            self.playerLabel.setPixmap(self.playerPixmap)
+            playerLabelX = 0
+            playerLabelY = config.BOARD_HEIGHT - config.IMAGE_HEIGHT
+
+            # set player 2 start position
+            self.playerTwoLabel = QLabel(self)
+            self.playerTwoLabel.setPixmap(self.playerTwoPixmap)
+            playerTwoLabelX = config.BOARD_WIDTH - config.IMAGE_WIDTH
+            playerTwoLabelY = config.BOARD_HEIGHT - config.IMAGE_HEIGHT
+
+            self.playerLabel.setGeometry(playerLabelX, playerLabelY, config.IMAGE_WIDTH, config.IMAGE_HEIGHT)
+            self.playerTwoLabel.setGeometry(playerTwoLabelX, playerTwoLabelY, config.IMAGE_WIDTH, config.IMAGE_HEIGHT)
+
+            # Players
+            self.player = Player(self.playerLabel)
+            self.playerTwo = Player(self.playerTwoLabel)
+
+        # Set enemy start positions
+        self.enemyLabels = []
+
+        for i in range(3):
+            for j in range(10):
+                enemyLabel = QLabel(self)
+                enemyLabel.setPixmap(self.enemyPixmap)
+                positionX = config.IMAGE_WIDTH * (j+3)
+                positionY = config.IMAGE_WIDTH * (i+1)
+                enemyLabel.setGeometry(positionX, positionY, config.IMAGE_WIDTH, config.IMAGE_HEIGHT)
+                enemyLabel.show()
+                self.enemyLabels.append(enemyLabel)
+
+        self.activate_enemy_threads()
 
     def next_level(self, current_level):
 
@@ -86,67 +170,21 @@ class Game(QWidget):
             self.shootLaser.add_enemy(self.enemyLabels[i])
             self.enemyAttack.add_enemy(self.enemyLabels[i])
 
-
     def update_level(self, current_level):
         print("LEVEL: ", current_level)
         gameLevelText = "<font color='white'>Level: {} </font>".format(current_level)
         print(gameLevelText)
         self.gameLevel.setText(gameLevelText)
 
-    def __init_ui__(self):
-
-        # Set background
-        numOfLabelsX = config.BOARD_WIDTH // config.IMAGE_WIDTH
-        numOfLabelsY = config.BOARD_HEIGHT // config.IMAGE_HEIGHT
-
-        for x in range(numOfLabelsX):
-            for y in range(numOfLabelsY):
-                backgroundLabel = QLabel(self)
-                backgroundLabel.setPixmap(self.backgroundPixmap)
-                backgroundLabelX = config.IMAGE_WIDTH * x
-                backgroundLabelY = config.IMAGE_HEIGHT * y
-                backgroundLabel.setGeometry(backgroundLabelX, backgroundLabelY, config.IMAGE_WIDTH, config.IMAGE_HEIGHT)
-
-        # Set lives label
-        self.playerLivesLabel = QLabel(self)
-        self.playerLivesLabelText = "<font color='white'>Lives: 3</font>"
-        self.playerLivesLabel.setText(self.playerLivesLabelText)
-        self.playerLivesLabel.setFont(QFont('Times', 16, QFont.Bold))
-
-        #Set level label
-        self.gameLevel = QLabel(self)
-        self.gameLevel.setFont(QFont("Times", 16, QFont.Bold))
-        levelX = config.BOARD_WIDTH // 2 - 50  # centar
-        levelY = 0
-        self.gameLevel.setGeometry(levelX, levelY, 100, 30)
-        self.update_level(1)
-
-        # Set player start position
-        self.playerLabel = QLabel(self)
-        self.playerLabel.setPixmap(self.playerPixmap)
-        playerLabelX = config.BOARD_WIDTH // 2 - config.IMAGE_WIDTH
-        playerLabelY = config.BOARD_HEIGHT - config.IMAGE_HEIGHT
-        self.playerLabel.setGeometry(playerLabelX, playerLabelY, config.IMAGE_WIDTH, config.IMAGE_HEIGHT)
-
-        # Set enemy start positions
-        self.enemyLabels = []
-
-        for i in range(3):
-            for j in range(10):
-                enemyLabel = QLabel(self)
-                enemyLabel.setPixmap(self.enemyPixmap)
-                positionX = config.IMAGE_WIDTH * (j+3)
-                positionY = config.IMAGE_WIDTH * (i+1)
-                enemyLabel.setGeometry(positionX, positionY, config.IMAGE_WIDTH, config.IMAGE_HEIGHT)
-                enemyLabel.show()
-                self.enemyLabels.append(enemyLabel)
-
-        self.activate_enemy_threads()
-
     def activate_enemy_threads(self):
         # add player for collision detection first
         self.enemyShoot.add_player(self.playerLabel)
         self.enemyAttack.add_player(self.playerLabel)
+
+        if self.startPlayers == 2:
+            self.enemyShoot.add_player(self.playerTwoLabel)
+            self.enemyAttack.add_player(self.playerTwoLabel)
+
         # add enemies for other stuff
         for i in range(len(self.enemyLabels)):
             self.moveEnemy.add_enemy(self.enemyLabels[i])
@@ -174,7 +212,28 @@ class Game(QWidget):
             self.playerLivesLabel.setText(self.playerLivesLabelText)
             # ukloni igraca
             self.enemyShoot.remove_player(self.playerLabel)
+            self.enemyAttack.remove_player(self.playerLabel)
             self.playerLabel.hide()
+
+        # Check for second player
+        if self.startPlayers == 2:
+            lives = self.playerTwo.get_lives()
+            if lives == 3:
+                self.playerTwoLivesLabelText = "<font color='white'>Lives: 3</font>"
+                self.playerTwoLivesLabel.setText(self.playerTwoLivesLabelText)
+            elif lives == 2:
+                self.playerTwoLivesLabelText = "<font color='white'>Lives: 2</font>"
+                self.playerTwoLivesLabel.setText(self.playerTwoLivesLabelText)
+            elif lives == 1:
+                self.playerTwoLivesLabelText = "<font color='white'>Lives: 1</font>"
+                self.playerTwoLivesLabel.setText(self.playerTwoLivesLabelText)
+            else:
+                self.playerTwoLivesLabelText = "<font color='white'>Lives: 0</font>"
+                self.playerTwoLivesLabel.setText(self.playerTwoLivesLabelText)
+                # ukloni igraca
+                self.enemyShoot.remove_player(self.playerTwoLabel)
+                self.enemyAttack.remove_player(self.playerTwoLabel)
+                self.playerTwoLabel.hide()
 
     def move_enemy(self, enemyLabel: QLabel, newX, newY):
         enemyLabel.move(newX, newY)
@@ -214,10 +273,19 @@ class Game(QWidget):
             self.enemyAttack.remove_moving_enemy(enemyLabel)
             self.shootLaser.remove_falling_enemy(enemyLabel)
 
-    def enemy_attack_player_hit(self, enemyLabel: QLabel):
+    def enemy_attack_player_hit(self, enemyLabel: QLabel, playerLabel: QLabel):
         enemyLabel.hide()
-        self.player.lower_lives()
-        self.update_lives_label()
+
+        if self.startPlayers == 2:
+            if self.player.playerLabel == playerLabel:
+                self.player.lower_lives()
+                self.update_lives_label()
+            if self.playerTwo.playerLabel == playerLabel:
+                self.playerTwo.lower_lives()
+                self.update_lives_label()
+        else:
+            self.player.lower_lives()
+            self.update_lives_label()
 
     def player_laser_enemy_collide(self, enemyLabel: QLabel, laserLabel: QLabel):
         try:
@@ -272,5 +340,23 @@ class Game(QWidget):
             if self.try_move_player(playerPos.x() - self.playerSpeed):
                 self.playerLabel.setGeometry(playerPos.x() - self.playerSpeed, playerPos.y(), playerPos.width(), playerPos.height())
         elif key == Qt.Key_Space:
-            if self.player.lives > 0:
+            if self.player.get_lives() > 0:
                 self.player_shoot_laser(playerPos.x() + config.IMAGE_WIDTH//2, playerPos.y() - config.IMAGE_HEIGHT)
+
+        # 2 players
+        if self.startPlayers == 2:
+            playerTwoPos = self.playerTwoLabel.geometry()
+
+            # player two moving
+            if key == Qt.Key_Right:
+                if self.try_move_player(playerTwoPos.x() + self.playerSpeed):
+                    self.playerTwoLabel.setGeometry(playerTwoPos.x() + self.playerSpeed, playerTwoPos.y(), playerTwoPos.width(),
+                                                 playerTwoPos.height())
+            elif key == Qt.Key_Left:
+                if self.try_move_player(playerTwoPos.x() - self.playerSpeed):
+                    self.playerTwoLabel.setGeometry(playerTwoPos.x() - self.playerSpeed, playerTwoPos.y(), playerTwoPos.width(),
+                                                 playerTwoPos.height())
+            elif key == Qt.Key_0:
+                if self.playerTwo.get_lives() > 0:
+                    self.player_shoot_laser(playerTwoPos.x() + config.IMAGE_WIDTH // 2, playerTwoPos.y() - config.IMAGE_HEIGHT)
+
