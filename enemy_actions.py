@@ -178,8 +178,12 @@ class EnemyShoot(QObject):
 
                     sortedYs = self.insertion_sort(yArray)
                     if len(sortedYs) == 0:
-                        print("Novi level !!!!!!!!!!!!!!!!!!!!")
-                        self.next_level.emit(3)
+                        #Dozvoli prvo da se svi laseri spuste
+                        if len(self.lasers) == 0:
+                         print("Novi level !!!!!!!!!!!!!!!!!!!!")
+                         sleep(config.NEXT_LEVEL_SLEEP)
+                         self.current_level += 1
+                         self.next_level.emit(self.current_level)
 
                     else:
                         yMax = sortedYs[-1]

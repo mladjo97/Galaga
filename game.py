@@ -64,6 +64,7 @@ class Game(QWidget):
 
         # Set enemy start positions
         self.enemyLabels = []
+        self.update_level(current_level)
 
         for i in range(3):
             for j in range(10):
@@ -81,6 +82,17 @@ class Game(QWidget):
             self.enemyShoot.add_enemy(self.enemyLabels[i])
             self.shootLaser.add_enemy(self.enemyLabels[i])
             self.enemyAttack.add_enemy(self.enemyLabels[i])
+
+
+    def update_level(self, current_level):
+        print("LEVEL: ", current_level)
+        self.gameLevel = QLabel(self)
+        self.gameLevelText = "<font color='white'>LEVEL:"+ str(current_level)+" </font>"
+        self.gameLevel.setText(self.gameLevelText)
+        self.gameLevel.setFont(QFont("Times", 16, QFont.Bold))
+        levelX = config.BOARD_WIDTH // 2 - 50 #centar
+        levelY = 0
+        self.gameLevel.setGeometry(levelX,levelY,100,50)
 
     def __init_ui__(self):
 
@@ -101,6 +113,9 @@ class Game(QWidget):
         self.playerLivesLabelText = "<font color='white'>Lives: 3</font>"
         self.playerLivesLabel.setText(self.playerLivesLabelText)
         self.playerLivesLabel.setFont(QFont('Times', 16, QFont.Bold))
+
+        #Set level label
+        self.update_level(1)
 
         # Set player start position
         self.playerLabel = QLabel(self)
