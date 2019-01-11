@@ -1,5 +1,5 @@
 from PyQt5.QtWidgets import QWidget, QLabel, QHBoxLayout
-from PyQt5.QtGui import QPixmap, QImage, QFont
+from PyQt5.QtGui import QPixmap, QImage, QFont, QGuiApplication
 from PyQt5.QtCore import Qt
 import config
 from time import sleep
@@ -13,6 +13,7 @@ class Game(QWidget):
 
     def __init__(self, players):
         super().__init__()
+
 
         # ShootLaser thread
         self.shootLaser = ShootLaser()
@@ -86,13 +87,9 @@ class Game(QWidget):
 
     def update_level(self, current_level):
         print("LEVEL: ", current_level)
-        self.gameLevel = QLabel(self)
-        self.gameLevelText = "<font color='white'>LEVEL:"+ str(current_level)+" </font>"
-        self.gameLevel.setText(self.gameLevelText)
-        self.gameLevel.setFont(QFont("Times", 16, QFont.Bold))
-        levelX = config.BOARD_WIDTH // 2 - 50 #centar
-        levelY = 0
-        self.gameLevel.setGeometry(levelX,levelY,100,50)
+        gameLevelText = "<font color='white'>Level: {} </font>".format(current_level)
+        print(gameLevelText)
+        self.gameLevel.setText(gameLevelText)
 
     def __init_ui__(self):
 
@@ -115,6 +112,11 @@ class Game(QWidget):
         self.playerLivesLabel.setFont(QFont('Times', 16, QFont.Bold))
 
         #Set level label
+        self.gameLevel = QLabel(self)
+        self.gameLevel.setFont(QFont("Times", 16, QFont.Bold))
+        levelX = config.BOARD_WIDTH // 2 - 50  # centar
+        levelY = 0
+        self.gameLevel.setGeometry(levelX, levelY, 100, 30)
         self.update_level(1)
 
         # Set player start position
