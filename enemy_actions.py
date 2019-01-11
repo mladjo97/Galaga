@@ -77,7 +77,7 @@ class EnemyShoot(QObject):
     can_shoot = pyqtSignal(int, int)
     move_down = pyqtSignal(QLabel, int, int)
     collision_detected = pyqtSignal(QLabel, QLabel)
-    next_level = pyqtSignal(int, int)
+    next_level = pyqtSignal(int)
 
     def __init__(self):
         super().__init__()
@@ -177,56 +177,58 @@ class EnemyShoot(QObject):
                             yArray.append(enemyY)
 
                     sortedYs = self.insertion_sort(yArray)
-                    yMax = sortedYs[-1]
-                    lowestRowEnemies = self.get_enemies_from_y(yMax)
-
-                   # if len(lowestRowEnemies) == 0:
-
-
-                    if len(lowestRowEnemies) == 10:
-                        # Posto ih imamo 10, mozemo ih sve uzeti i jedan od njih ce da puca
-                        randIndex = randint(0, 9)
-                        enemy = lowestRowEnemies[randIndex]
-                        enemyGeo = enemy.geometry()
-                        laserX = enemyGeo.x() + (config.IMAGE_WIDTH // 2)
-                        laserY = enemyGeo.y() + config.IMAGE_HEIGHT
-                        self.can_shoot.emit(laserX, laserY)
-                        self.canShoot = False
-
-                    elif len(lowestRowEnemies) < 10:
-                        # Imamo manje od 10, mozda neko iznad moze da puca
-                        # postoji bolji nacin da se ovaj problem resi, za sad neka bude ovako :D
-                        if len(sortedYs) > 1:
-                            y = sortedYs[-2]
-                        else:
-                            print("Ostao je samo jedan red: ")
-                            y = sortedYs[-1]
-
-                        # print("Evo ga: " , sortedYs[-2])
-                        upperEnemies = self.get_enemies_from_y(y)
-
-                        for lowerEnemy in lowestRowEnemies:
-                            lowerEnemyGeo = lowerEnemy.geometry()
-                            lowerRowEnemyX = lowerEnemyGeo.x()
-                            for upperEnemy in upperEnemies:
-                                upperEnemyGeo = upperEnemy.geometry()
-                                upperEnemyX = upperEnemyGeo.x()
-                                if lowerRowEnemyX == upperEnemyX:
-                                    upperEnemies.remove(upperEnemy)
-
-                        lowestRowEnemies += upperEnemies
-
-                        # probaj pucati
-                        randIndex = randint(0, len(lowestRowEnemies)-1)
-                        enemy = lowestRowEnemies[randIndex]
-                        enemyGeo = enemy.geometry()
-                        laserX = enemyGeo.x() + (config.IMAGE_WIDTH // 2)
-                        laserY = enemyGeo.y() + config.IMAGE_HEIGHT
-                        self.can_shoot.emit(laserX, laserY)
-                        self.canShoot = False
+                    if len(sortedYs) == 0:
+                        print("Novi level !!!!!!!!!!!!!!!!!!!!")
+                        self.next_level.emit(3)
 
                     else:
-                        print('Okej, nesto ovde ne radi ...')
+                        yMax = sortedYs[-1]
+                        lowestRowEnemies = self.get_enemies_from_y(yMax)
+
+                        if len(lowestRowEnemies) == 10:
+                            # Posto ih imamo 10, mozemo ih sve uzeti i jedan od njih ce da puca
+                            randIndex = randint(0, 9)
+                            enemy = lowestRowEnemies[randIndex]
+                            enemyGeo = enemy.geometry()
+                            laserX = enemyGeo.x() + (config.IMAGE_WIDTH // 2)
+                            laserY = enemyGeo.y() + config.IMAGE_HEIGHT
+                            self.can_shoot.emit(laserX, laserY)
+                            self.canShoot = False
+
+                        elif len(lowestRowEnemies) < 10:
+                            # Imamo manje od 10, mozda neko iznad moze da puca
+                            # postoji bolji nacin da se ovaj problem resi, za sad neka bude ovako :D
+                            if len(sortedYs) > 1:
+                                y = sortedYs[-2]
+                            else:
+                                print("Ostao je samo jedan red: ")
+                                y = sortedYs[-1]
+
+                            # print("Evo ga: " , sortedYs[-2])
+                            upperEnemies = self.get_enemies_from_y(y)
+
+                            for lowerEnemy in lowestRowEnemies:
+                                lowerEnemyGeo = lowerEnemy.geometry()
+                                lowerRowEnemyX = lowerEnemyGeo.x()
+                                for upperEnemy in upperEnemies:
+                                    upperEnemyGeo = upperEnemy.geometry()
+                                    upperEnemyX = upperEnemyGeo.x()
+                                    if lowerRowEnemyX == upperEnemyX:
+                                        upperEnemies.remove(upperEnemy)
+
+                            lowestRowEnemies += upperEnemies
+
+                            # probaj pucati
+                            randIndex = randint(0, len(lowestRowEnemies)-1)
+                            enemy = lowestRowEnemies[randIndex]
+                            enemyGeo = enemy.geometry()
+                            laserX = enemyGeo.x() + (config.IMAGE_WIDTH // 2)
+                            laserY = enemyGeo.y() + config.IMAGE_HEIGHT
+                            self.can_shoot.emit(laserX, laserY)
+                            self.canShoot = False
+
+                        else:
+                            print('Okej, nesto ovde ne radi ...')
             except Exception as e:
                 print('Exception in EnemyShoot_Thread: ', str(e))
                 #i ovo moze bolje , ali za sad nek bude ovako
@@ -354,8 +356,8 @@ class EnemyAttack(QObject):
     def __work__(self):
         while self.threadWorking:
             collided = False
-            print("Enemy length: " , len(self.enemies))
-            print("Faling enemy length: ",len(self.movingEnemies))
+            #print("Enemy length: " , len(self.enemies))
+            #print("Faling enemy length: ",len(self.movingEnemies))
             try:
                 # Try attacking
                 if self.canAttack:

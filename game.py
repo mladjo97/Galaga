@@ -32,7 +32,7 @@ class Game(QWidget):
         self.enemyShoot.can_shoot.connect(self.enemy_shoot_laser)
         self.enemyShoot.move_down.connect(self.move_enemy_laser)
         self.enemyShoot.collision_detected.connect(self.enemy_hit_player)
-        # self.enemyShoot.next_level.connect(self.Next_level)
+        self.enemyShoot.next_level.connect(self.next_level)
         self.enemyShoot.start()
 
         # EnemyAttack thread
@@ -60,7 +60,7 @@ class Game(QWidget):
 
         self.__init_ui__()
 
-    def next_level(self, lives, current_level):
+    def next_level(self, current_level):
 
         # Set enemy start positions
         self.enemyLabels = []
