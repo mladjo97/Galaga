@@ -63,6 +63,8 @@ class Game(QWidget):
 
     def next_level(self, current_level):
 
+        self.enemyShoot.update_level(config.NEXTLVL_SHOOT_TIMER, config.NEXTLVL_ENEMY_LASER_SPEED)
+
         # Set enemy start positions
         self.enemyLabels = []
         self.update_level(current_level)
@@ -152,6 +154,10 @@ class Game(QWidget):
             self.shootLaser.add_enemy(self.enemyLabels[i])
             self.enemyAttack.add_enemy(self.enemyLabels[i])
 
+    def remove_enemy_label(self, enemyLabel: QLabel):
+        if enemyLabel in self.enemyLabels:
+            self.enemyLabels.remove(enemyLabel)
+
     def update_lives_label(self):
         lives = self.player.get_lives()
         if lives == 3:
@@ -217,8 +223,7 @@ class Game(QWidget):
         try:
             enemyLabel.hide()
             laserLabel.hide()
-            print('pogodio')
-            self.enemyLabels.remove(enemyLabel)
+            self.remove_enemy_label(enemyLabel)
             self.moveEnemy.remove_enemy(enemyLabel)
             self.enemyShoot.remove_enemy(enemyLabel)
             self.enemyAttack.remove_enemy(enemyLabel)
@@ -230,8 +235,7 @@ class Game(QWidget):
         try:
             enemyLabel.hide()
             laserLabel.hide()
-            print('pogodio MOVING')
-            self.enemyLabels.remove(enemyLabel)
+            self.remove_enemy_label(enemyLabel)
             self.enemyAttack.remove_moving_enemy(enemyLabel)
         except Exception as e:
             print('Exception in Main_Thread/player_laser_enemy_collide method: ', str(e))

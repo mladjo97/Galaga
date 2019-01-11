@@ -28,7 +28,8 @@ class MoveEnemy(QObject):
         self.enemies.append(enemyLabel)
 
     def remove_enemy(self, enemyLabel: QLabel):
-        self.enemies.remove(enemyLabel)
+        if enemyLabel in self.enemies:
+            self.enemies.remove(enemyLabel)
 
     def die(self):
         self.threadWorking = False
@@ -89,6 +90,8 @@ class EnemyShoot(QObject):
         self.lasers = []
         self.players = []
 
+        self.enemyLaserSpeed = config.ENEMY_LASER_SPEED
+        self.shootingTimerInterval = config.ENEMY_SHOOT_TIMER
         self.canShoot = False
         self.shootingTimer = QTimer()
         self.shootingTimer.setInterval(config.ENEMY_SHOOT_TIMER)
@@ -106,19 +109,32 @@ class EnemyShoot(QObject):
         self.enemies.append(enemyLabel)
 
     def remove_enemy(self, enemyLabel: QLabel):
-        self.enemies.remove(enemyLabel)
+        if enemyLabel in self.enemies:
+            self.enemies.remove(enemyLabel)
 
     def add_laser(self, laserLabel: QLabel):
         self.lasers.append(laserLabel)
 
     def remove_laser(self, laserLabel: QLabel):
-        self.lasers.remove(laserLabel)
+        if laserLabel in self.lasers:
+            self.lasers.remove(laserLabel)
 
     def add_player(self, playerLabel: QLabel):
         self.players.append(playerLabel)
 
     def remove_player(self, playerLabel: QLabel):
-        self.players.remove(playerLabel)
+        if playerLabel in self.players:
+            self.players.remove(playerLabel)
+
+    def update_level(self, newInterval, newLaserSpeed):
+        if (self.shootingTimerInterval - newInterval) >= 500:
+            self.shootingTimerInterval -= newInterval
+            self.shootingTimer.setInterval(self.shootingTimerInterval)
+            print('Changed shooting interval to: ', self.shootingTimerInterval)
+
+        if (self.enemyLaserSpeed + newLaserSpeed) <= 18:
+            self.enemyLaserSpeed += newLaserSpeed
+            print('Changed enemy laser speed to: ', self.enemyLaserSpeed)
 
     def die(self):
         self.threadWorking = False
@@ -205,7 +221,7 @@ class EnemyShoot(QObject):
                             if len(sortedYs) > 1:
                                 y = sortedYs[-2]
                             else:
-                                print("Ostao je samo jedan red: ")
+                                #print("Ostao je samo jedan red: ")
                                 y = sortedYs[-1]
 
                             # print("Evo ga: " , sortedYs[-2])
@@ -218,7 +234,8 @@ class EnemyShoot(QObject):
                                     upperEnemyGeo = upperEnemy.geometry()
                                     upperEnemyX = upperEnemyGeo.x()
                                     if lowerRowEnemyX == upperEnemyX:
-                                        upperEnemies.remove(upperEnemy)
+                                        if upperEnemies in upperEnemies:
+                                            upperEnemies.remove(upperEnemy)
 
                             lowestRowEnemies += upperEnemies
 
@@ -235,11 +252,6 @@ class EnemyShoot(QObject):
                             print('Okej, nesto ovde ne radi ...')
             except Exception as e:
                 print('Exception in EnemyShoot_Thread: ', str(e))
-                #i ovo moze bolje , ali za sad nek bude ovako
-                # next level ?
-                # print("Enemies 0 in MoveEnemy")
-                # self.current_level += 1
-                # self.next_level.emit(3, self.current_level)
 
             try:
                 # MOVE LASER DOWN
@@ -247,7 +259,7 @@ class EnemyShoot(QObject):
                     for laser in self.lasers:
                         laserGeo = laser.geometry()
                         laserX = laserGeo.x()
-                        laserY = laserGeo.y() + config.ENEMY_LASER_SPEED
+                        laserY = laserGeo.y() + self.enemyLaserSpeed
 
                         # Check for collision with players
                         if len(self.players) > 0:
@@ -311,19 +323,22 @@ class EnemyAttack(QObject):
         self.enemies.append(enemyLabel)
 
     def remove_enemy(self, enemyLabel: QLabel):
-        self.enemies.remove(enemyLabel)
+        if enemyLabel in self.enemies:
+            self.enemies.remove(enemyLabel)
 
     def add_moving_enemy(self, enemyLabel: QLabel):
         self.movingEnemies.append(enemyLabel)
 
     def remove_moving_enemy(self, enemyLabel: QLabel):
-        self.movingEnemies.remove(enemyLabel)
+        if enemyLabel in self.movingEnemies:
+            self.movingEnemies.remove(enemyLabel)
 
     def add_player(self, playerLabel: QLabel):
         self.players.append(playerLabel)
 
     def remove_player(self, playerLabel: QLabel):
-        self.players.remove(playerLabel)
+        if playerLabel in self.players:
+            self.players.remove(playerLabel)
 
     def die(self):
         self.threadWorking = False
@@ -377,7 +392,6 @@ class EnemyAttack(QObject):
                             # try to remove from moving enemies
                             self.can_attack.emit(enemy)
                             self.remove_enemy(enemy)
-                            print("Obrisao sam ga !!!!!!!!!!")
                             self.add_moving_enemy(enemy)
                             self.canAttack = False
 

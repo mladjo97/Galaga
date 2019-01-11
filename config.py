@@ -15,6 +15,10 @@ ENEMY_SHOOT_TIMER = 2000        # ms
 ENEMY_FALL_TIMER = 3000            # ms
 ENEMY_FALLING_SPEED = 10
 
+# Next level setting (difficulty)
+NEXTLVL_SHOOT_TIMER = 200      # ms
+NEXTLVL_ENEMY_LASER_SPEED = 2
+
 # Board settings
 BOARD_WIDTH = 800
 BOARD_HEIGHT = 600

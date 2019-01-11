@@ -28,19 +28,22 @@ class ShootLaser(QObject):
         self.laserLabels.append(laserLabel)
 
     def remove_laser(self, laserLabel: QLabel):
-        self.laserLabels.remove(laserLabel)
+        if laserLabel in self.laserLabels:
+            self.laserLabels.remove(laserLabel)
 
     def add_enemy(self, enemyLabel: QLabel):
         self.enemyLabels.append(enemyLabel)
 
     def remove_enemy(self, enemyLabel: QLabel):
-        self.enemyLabels.remove(enemyLabel)
+        if enemyLabel in self.enemyLabels:
+            self.enemyLabels.remove(enemyLabel)
 
     def add_falling_enemy(self, enemyLabel: QLabel):
         self.fallingEnemies.append(enemyLabel)
 
     def remove_falling_enemy(self, enemyLabel: QLabel):
-        self.fallingEnemies.remove(enemyLabel)
+        if enemyLabel in self.fallingEnemies:
+            self.fallingEnemies.remove(enemyLabel)
 
     def die(self):
         self.threadWorking = False
@@ -85,7 +88,7 @@ class ShootLaser(QObject):
                         if laserY == enemyY:
                             yIsEqual = True
                         if xIsEqual and yIsEqual:
-                            print('Collision detected for y: {} {}'.format(enemyY, laserY))
+                            # print('Collision detected for y: {} {}'.format(enemyY, laserY))
                             self.remove_enemy(enemy)
                             self.remove_laser(laser)
                             self.collision_detected.emit(enemy, laser)
