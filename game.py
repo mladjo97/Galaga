@@ -262,13 +262,14 @@ class Game(QWidget):
 
             #game over label
             self.gameOver = QLabel(self)
-            self.gameOver.setFont(QFont("Times", 16, QFont.Bold))
-            gameOverX = config.BOARD_WIDTH // 2 - 50  # centar
-            gameOverY = config.BOARD_HEIGHT // 2
-            self.gameOver.setGeometry(gameOverX, gameOverY, 100, 100)
-            gameOverText = "<font color='white'>GAME OVER </font>"
+            self.gameOver.setFont(QFont("Times", 64, QFont.Bold))
+            gameOverX = config.BOARD_WIDTH // 2 - config.IMAGE_WIDTH * 5  # centar
+            gameOverY = config.BOARD_HEIGHT // 2 - config.IMAGE_HEIGHT * 5 - 100
+            self.gameOver.setGeometry(gameOverX, gameOverY, 550, 550)
+            gameOverText = "<font color='red'>GAME OVER </font>"
             print(gameOverText)
             self.gameOver.setText(gameOverText)
+            self.gameOver.show()
 
            # self.displayGameOver()
 
