@@ -138,6 +138,8 @@ class EnemyShoot(QObject):
 
     def die(self):
         self.threadWorking = False
+        self.shootingTimer.stop()
+        print('Stopping shooting timer')
         self.thread.quit()
 
     def find_ymax(self):
@@ -196,10 +198,9 @@ class EnemyShoot(QObject):
                     if len(sortedYs) == 0:
                         #Dozvoli prvo da se svi laseri spuste
                         if len(self.lasers) == 0:
-                         print("Novi level !!!!!!!!!!!!!!!!!!!!")
-                         sleep(config.NEXT_LEVEL_SLEEP)
-                         self.current_level += 1
-                         self.next_level.emit(self.current_level)
+                            sleep(config.NEXT_LEVEL_SLEEP)
+                            self.current_level += 1
+                            self.next_level.emit(self.current_level)
 
                     else:
                         yMax = sortedYs[-1]
@@ -300,7 +301,6 @@ class EnemyShoot(QObject):
 
             sleep(0.05)
 
-
 class EnemyAttack(QObject):
     can_attack = pyqtSignal(QLabel)
     move_down = pyqtSignal(QLabel, int, int)
@@ -351,6 +351,8 @@ class EnemyAttack(QObject):
 
     def die(self):
         self.threadWorking = False
+        self.fallingTimer.stop()
+        print('Stopping falling timer')
         self.thread.quit()
 
     def find_ymax(self):

@@ -1,6 +1,7 @@
 # Gameplay settings
 GAME_SPEED = 500
 NEXT_LEVEL_SLEEP = 5
+POWERUP_TIMEOUT = 5000      # ms
 
 # Player setting
 PLAYER_SPEED = 15

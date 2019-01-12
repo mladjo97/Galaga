@@ -11,11 +11,14 @@ class Galaga():
         self.game.startAgain.connect(self.startGame)
 
     def startGame(self):
-        print('STARTING APPLICATION AGAIN')
-        self.game.stopThreads()
-        print('Stopped threads')
-        self.game = gui.GameWindow()
-        self.game.startAgain.connect(self.startGame)
+        try:
+            print('STARTING APPLICATION AGAIN')
+            self.game.stopThreads()
+            print('Stopped threads')
+            self.game = gui.GameWindow()
+            self.game.startAgain.connect(self.startGame)
+        except Exception as e:
+            print('Exception in StartGame/Galaga: ', str(e))
 
 
 if __name__ == '__main__':

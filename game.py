@@ -1,12 +1,13 @@
 from PyQt5.QtWidgets import QWidget, QLabel
 from PyQt5.QtGui import QPixmap, QFont
-from PyQt5.QtCore import Qt, pyqtSignal
+from PyQt5.QtCore import Qt, pyqtSignal, QTimer
 import config
 from player_actions import ShootLaser
 from player import Player
 from enemy_actions import MoveEnemy, EnemyShoot, EnemyAttack
-from time import sleep
-
+from multiprocessing import Process, Queue
+from random import randint
+from deus_ex_machina import DeusExMachina
 
 class Game(QWidget):
 
@@ -43,6 +44,24 @@ class Game(QWidget):
         self.enemyAttack.move_down.connect(self.move_enemy_down)
         self.enemyAttack.player_collision.connect(self.enemy_attack_player_hit)
         self.enemyAttack.start()
+
+        # PowerUp thread
+        self.deusExMachina = DeusExMachina()
+        self.deusExMachina.collision_detected.connect(self.powerup_collision)
+        self.deusExMachina.powerup_timeout.connect(self.powerup_timeout)
+        self.deusExMachina.start()
+
+        # PowerUp process
+        self.powerUpQueue = Queue()
+        self.powerUpProcess = Process(target=self.powerup_process, args=[self.powerUpQueue])
+        self.powerUpProcess.run()
+        self.powerUpLabels = []
+
+        # Power up timer
+        self.powerUpTimer = QTimer()
+        self.powerUpTimer.setInterval(config.POWERUP_TIMEOUT)
+        self.powerUpTimer.timeout.connect(self.show_powerup)
+        self.powerUpTimer.start()
 
         # Gameplay options
         self.activePlayers = players
@@ -146,6 +165,56 @@ class Game(QWidget):
 
         self.activate_enemy_threads()
 
+    def powerup_process(self, q: Queue):
+        while q.qsize() < 10:
+            #print('Q Size: ', q.qsize())
+            randomX = randint(0, config.BOARD_WIDTH - config.IMAGE_HEIGHT)
+            q.put(randomX)
+
+    def show_powerup(self):
+        print('Dodajem novu power up labelu')
+
+        if self.powerUpQueue.qsize() < 2:
+            self.powerUpProcess.run()
+
+        powerUpX = self.powerUpQueue.get()
+        print('powerUpXCoo: ', powerUpX)
+
+        powerUpPixmap = QPixmap('images/pewdiepie.png')
+        powerUpLabel = QLabel(self)
+        powerUpLabel.setPixmap(powerUpPixmap)
+        powerUpLabel.setGeometry(powerUpX, config.BOARD_HEIGHT-config.IMAGE_HEIGHT, config.IMAGE_WIDTH, config.IMAGE_HEIGHT)
+        powerUpLabel.show()
+
+        self.deusExMachina.add_powerup(powerUpLabel)
+        self.powerUpLabels.append(powerUpLabel)
+
+        print('Dodao novu power up labelu')
+
+    def powerup_timeout(self, powerUpLabel: QLabel):
+        if powerUpLabel in self.powerUpLabels:
+            self.powerUpLabels.remove(powerUpLabel)
+
+        powerUpLabel.hide()
+
+    def powerup_collision(self, powerUpLabel: QLabel, playerLabel: QLabel):
+        if powerUpLabel in self.powerUpLabels:
+            self.powerUpLabels.remove(powerUpLabel)
+
+        powerUpLabel.hide()
+
+        if self.startPlayers == 2:
+            if self.player.playerLabel == playerLabel:
+                # Player 1
+                pass
+            if self.playerTwo.playerLabel == playerLabel:
+                # Player 2
+                pass
+        else:
+            # Player 1
+            print('Player 1 je pokupio powerup')
+
+
     def next_level(self, current_level):
         if self.activePlayers == 0 and len(self.enemyLabels) == 0:
             self.displayGameOver()
@@ -177,17 +246,18 @@ class Game(QWidget):
     def update_level(self, current_level):
         print("LEVEL: ", current_level)
         gameLevelText = "<font color='white'>Level: {} </font>".format(current_level)
-        print(gameLevelText)
         self.gameLevel.setText(gameLevelText)
 
     def activate_enemy_threads(self):
         # add player for collision detection first
         self.enemyShoot.add_player(self.playerLabel)
         self.enemyAttack.add_player(self.playerLabel)
+        self.deusExMachina.add_player(self.playerLabel)
 
         if self.startPlayers == 2:
             self.enemyShoot.add_player(self.playerTwoLabel)
             self.enemyAttack.add_player(self.playerTwoLabel)
+            self.deusExMachina.add_player(self.playerTwoLabel)
 
         # add enemies for other stuff
         for i in range(len(self.enemyLabels)):
@@ -218,6 +288,7 @@ class Game(QWidget):
                 # ukloni igraca
                 self.enemyShoot.remove_player(self.playerLabel)
                 self.enemyAttack.remove_player(self.playerLabel)
+                self.deusExMachina.remove_player(self.playerLabel)
                 self.playerLabel.hide()
                 self.activePlayers -= 1
 
@@ -240,13 +311,13 @@ class Game(QWidget):
                     # ukloni igraca
                     self.enemyShoot.remove_player(self.playerTwoLabel)
                     self.enemyAttack.remove_player(self.playerTwoLabel)
+                    self.deusExMachina.remove_player(self.playerTwoLabel)
                     self.playerTwoLabel.hide()
                     self.activePlayers -= 1
 
         # check if game over
         if self.activePlayers == 0:
             while len(self.enemyLabels) != 0:
-                print("ENEMIES LEFT: " , len(self.enemyLabels))
                 for enemy in self.enemyLabels:
                     try:
                         enemy.hide()
@@ -260,6 +331,12 @@ class Game(QWidget):
                     self.shootLaser.remove_falling_enemy(enemy)
                     self.remove_enemy_label(enemy)
 
+            # hide powerup labels
+            self.powerUpTimer.stop()
+            print('Stopped power up timer')
+            for label in self.powerUpLabels:
+                label.hide()
+
             #game over label
             self.gameOver = QLabel(self)
             self.gameOver.setFont(QFont("Times", 64, QFont.Bold))
@@ -267,11 +344,8 @@ class Game(QWidget):
             gameOverY = config.BOARD_HEIGHT // 2 - config.IMAGE_HEIGHT * 5 - 100
             self.gameOver.setGeometry(gameOverX, gameOverY, 550, 550)
             gameOverText = "<font color='red'>GAME OVER </font>"
-            print(gameOverText)
             self.gameOver.setText(gameOverText)
             self.gameOver.show()
-
-           # self.displayGameOver()
 
     def displayGameOver(self):
         self.gameOverSignal.emit()
