@@ -18,6 +18,7 @@ class DeusExMachina(QObject):
         self.powerUpLabels = []
 
         self.powerUpTime = time()
+        self.shouldCheck = True
 
         self.thread = QThread()
         self.moveToThread(self.thread)
@@ -40,7 +41,6 @@ class DeusExMachina(QObject):
     def add_powerup(self, powerUpLabel: QLabel):
         self.powerUpLabels.append(powerUpLabel)
         self.powerUpTime = time()
-        print('Power up time in ADD: ', self.powerUpTime)
 
     def remove_powerup(self, powerUpLabel: QLabel):
         if powerUpLabel in self.powerUpLabels:
@@ -49,19 +49,16 @@ class DeusExMachina(QObject):
     def __work__(self):
         while self.threadWorking:
             try:
-                #print("len of powerup: ", len(self.powerUpLabels))
-                #print('len of players: ', len(self.playerLabels))
-
                 currentTime = time()
-                #print('Current time: ', currentTime)
 
-                if len(self.powerUpLabels) > 0:
+                if len(self.powerUpLabels) > 0 and self.shouldCheck:
                     if currentTime - self.powerUpTime > 2:
                         print('DVE SEKUNDE PROSLE')
                         for powerUpLabel in self.powerUpLabels:
                             self.powerUpLabels.remove(powerUpLabel)
                             self.powerup_timeout.emit(powerUpLabel)
 
+                collided = False
                 for playerLabel in self.playerLabels:
                     playerLabelGeo = playerLabel.geometry()
                     playerLabelXStart = playerLabelGeo.x()
@@ -78,10 +75,16 @@ class DeusExMachina(QObject):
                         # detect collision
                         for playerLabelX in playerLabelXArray:
                             if playerLabelX in powerupLabelXArray:
-                                print('uzeo power up')
                                 self.remove_powerup(powerupLabel)
                                 self.collision_detected.emit(powerupLabel, playerLabel)
+                                collided = True
                                 break
+
+                        # da ne pokupe bas oba igraca isti powerup
+                        if collided:
+                            break
+                    if collided:
+                        break
 
                 sleep(0.05)
             except Exception as e:

@@ -1,7 +1,8 @@
 # Gameplay settings
 GAME_SPEED = 500
 NEXT_LEVEL_SLEEP = 5
-POWERUP_TIMEOUT = 5000      # ms
+POWERUP_TIMEOUT = 10000      # ms
+POWERUP_COOLDOWN_TIMER = 4000   # ms
 
 # Player setting
 PLAYER_SPEED = 15
@@ -25,3 +26,6 @@ BOARD_WIDTH = 800
 BOARD_HEIGHT = 600
 IMAGE_WIDTH = 50
 IMAGE_HEIGHT = 50
+
+# nije bas za config, ali bolje nego tamo u kodu negde :))
+POWERUPS = ['additional_life', 'sonic_speed', 'turtle_speed', 'stop_shooting']

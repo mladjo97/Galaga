@@ -5,9 +5,10 @@ import config
 from player_actions import ShootLaser
 from player import Player
 from enemy_actions import MoveEnemy, EnemyShoot, EnemyAttack
-from multiprocessing import Process, Queue
+from multiprocessing import Process, Queue, current_process
 from random import randint
 from deus_ex_machina import DeusExMachina
+
 
 class Game(QWidget):
 
@@ -17,6 +18,13 @@ class Game(QWidget):
         super().__init__()
 
         print('Players to play: ', players)
+
+        # PowerUp process
+        self.powerUpQueue = Queue()
+        print('Regular process id: ', current_process().pid)
+        powerUpProcess = Process(target=powerup_process, args=[self.powerUpQueue])
+        powerUpProcess.start()
+        self.powerUpLabels = []
 
         # ShootLaser thread
         self.shootLaser = ShootLaser()
@@ -51,12 +59,6 @@ class Game(QWidget):
         self.deusExMachina.powerup_timeout.connect(self.powerup_timeout)
         self.deusExMachina.start()
 
-        # PowerUp process
-        self.powerUpQueue = Queue()
-        self.powerUpProcess = Process(target=self.powerup_process, args=[self.powerUpQueue])
-        self.powerUpProcess.run()
-        self.powerUpLabels = []
-
         # Power up timer
         self.powerUpTimer = QTimer()
         self.powerUpTimer.setInterval(config.POWERUP_TIMEOUT)
@@ -66,7 +68,10 @@ class Game(QWidget):
         # Gameplay options
         self.activePlayers = players
         self.startPlayers = players
-        self.playerSpeed = config.PLAYER_SPEED
+        self.playerOneSpeed = config.PLAYER_SPEED
+        self.playerTwoSpeed = config.PLAYER_SPEED
+        self.playerOneCanShoot = True
+        self.playerTwoCanShoot = True
 
         # Add background pixmap
         self.backgroundPixmap = QPixmap('images/background.png')
@@ -165,20 +170,12 @@ class Game(QWidget):
 
         self.activate_enemy_threads()
 
-    def powerup_process(self, q: Queue):
-        while q.qsize() < 10:
-            #print('Q Size: ', q.qsize())
-            randomX = randint(0, config.BOARD_WIDTH - config.IMAGE_HEIGHT)
-            q.put(randomX)
-
     def show_powerup(self):
-        print('Dodajem novu power up labelu')
-
         if self.powerUpQueue.qsize() < 2:
-            self.powerUpProcess.run()
+            powerUpProcess = Process(target=powerup_process, args=[self.powerUpQueue])
+            powerUpProcess.start()
 
         powerUpX = self.powerUpQueue.get()
-        print('powerUpXCoo: ', powerUpX)
 
         powerUpPixmap = QPixmap('images/pewdiepie.png')
         powerUpLabel = QLabel(self)
@@ -188,8 +185,6 @@ class Game(QWidget):
 
         self.deusExMachina.add_powerup(powerUpLabel)
         self.powerUpLabels.append(powerUpLabel)
-
-        print('Dodao novu power up labelu')
 
     def powerup_timeout(self, powerUpLabel: QLabel):
         if powerUpLabel in self.powerUpLabels:
@@ -203,17 +198,146 @@ class Game(QWidget):
 
         powerUpLabel.hide()
 
+        # choose random powerup
+        randIndex = randint(0, len(config.POWERUPS)-1)
+        powerUpAction = config.POWERUPS[2]
+
+        print('Action: ', powerUpAction)
+
         if self.startPlayers == 2:
             if self.player.playerLabel == playerLabel:
                 # Player 1
-                pass
+                print('Player 1 je pokupio powerup')
+
+                if powerUpAction == 'sonic_speed':
+                    if not self.playerOneSpeed + 10 > 30:
+                        self.playerOneSpeed += 10
+                        # Cooldown
+                        self.powerUpCooldownTimer = QTimer()
+                        self.powerUpCooldownTimer.setInterval(config.POWERUP_COOLDOWN_TIMER)
+                        self.powerUpCooldownTimer.timeout.connect(lambda: self.stop_powerup(1, powerUpAction))
+                        self.powerUpCooldownTimer.setSingleShot(True)
+                        self.powerUpCooldownTimer.start()
+                elif powerUpAction == 'additional_life':
+                    if self.player.get_lives() < 3:
+                        self.player.lives += 1
+                        self.update_lives_label()
+                elif powerUpAction == 'turtle_speed':
+                    if self.playerOneSpeed - 10 >= 5:
+                        self.playerOneSpeed -= 10
+                        # Cooldown
+                        self.powerUpCooldownTimer = QTimer()
+                        self.powerUpCooldownTimer.setInterval(config.POWERUP_COOLDOWN_TIMER)
+                        self.powerUpCooldownTimer.timeout.connect(lambda: self.stop_powerup(1, powerUpAction))
+                        self.powerUpCooldownTimer.setSingleShot(True)
+                        self.powerUpCooldownTimer.start()
+                elif powerUpAction == 'stop_shooting':
+                    self.playerOneCanShoot = False
+                    # Cooldown
+                    self.powerUpCooldownTimer = QTimer()
+                    self.powerUpCooldownTimer.setInterval(config.POWERUP_COOLDOWN_TIMER)
+                    self.powerUpCooldownTimer.timeout.connect(lambda: self.stop_powerup(1, powerUpAction))
+                    self.powerUpCooldownTimer.setSingleShot(True)
+                    self.powerUpCooldownTimer.start()
+
             if self.playerTwo.playerLabel == playerLabel:
                 # Player 2
-                pass
+                print('Player 2 je pokupio powerup')
+
+                if powerUpAction == 'sonic_speed':
+                    if not self.playerTwoSpeed + 10 > 30:
+                        self.playerTwoSpeed += 10
+                        # Cooldown
+                        # Power up expire timer
+                        self.powerUpCooldownTimer = QTimer()
+                        self.powerUpCooldownTimer.setInterval(config.POWERUP_COOLDOWN_TIMER)
+                        self.powerUpCooldownTimer.timeout.connect(lambda: self.stop_powerup(2, powerUpAction))
+                        self.powerUpCooldownTimer.setSingleShot(True)
+                        self.powerUpCooldownTimer.start()
+                    elif powerUpAction == 'additional_life':
+                        if self.playerTwo.get_lives() < 3:
+                            self.playerTwo.lives += 1
+                            self.update_lives_label()
+                    elif powerUpAction == 'turtle_speed':
+                        if self.playerTwoSpeed - 10 >= 5:
+                            self.playerTwoSpeed -= 10
+                            # Cooldown
+                            self.powerUpCooldownTimer = QTimer()
+                            self.powerUpCooldownTimer.setInterval(config.POWERUP_COOLDOWN_TIMER)
+                            self.powerUpCooldownTimer.timeout.connect(lambda: self.stop_powerup(2, powerUpAction))
+                            self.powerUpCooldownTimer.setSingleShot(True)
+                            self.powerUpCooldownTimer.start()
+                    elif powerUpAction == 'stop_shooting':
+                        self.playerTwoCanShoot = False
+                        # Cooldown
+                        self.powerUpCooldownTimer = QTimer()
+                        self.powerUpCooldownTimer.setInterval(config.POWERUP_COOLDOWN_TIMER)
+                        self.powerUpCooldownTimer.timeout.connect(lambda: self.stop_powerup(2, powerUpAction))
+                        self.powerUpCooldownTimer.setSingleShot(True)
+                        self.powerUpCooldownTimer.start()
         else:
             # Player 1
             print('Player 1 je pokupio powerup')
 
+            if powerUpAction == 'sonic_speed':
+                if not self.playerOneSpeed + 10 > 30:
+                    self.playerOneSpeed += 10
+                    # Cooldown
+                    self.powerUpCooldownTimer = QTimer()
+                    self.powerUpCooldownTimer.setInterval(config.POWERUP_COOLDOWN_TIMER)
+                    self.powerUpCooldownTimer.timeout.connect(lambda: self.stop_powerup(1, powerUpAction))
+                    self.powerUpCooldownTimer.setSingleShot(True)
+                    self.powerUpCooldownTimer.start()
+            elif powerUpAction == 'additional_life':
+                if self.player.get_lives() < 3:
+                    self.player.lives += 1
+                    self.update_lives_label()
+            elif powerUpAction == 'turtle_speed':
+                if self.playerOneSpeed - 10 >= 5:
+                    self.playerOneSpeed -= 10
+                    # Cooldown
+                    self.powerUpCooldownTimer = QTimer()
+                    self.powerUpCooldownTimer.setInterval(config.POWERUP_COOLDOWN_TIMER)
+                    self.powerUpCooldownTimer.timeout.connect(lambda: self.stop_powerup(1, powerUpAction))
+                    self.powerUpCooldownTimer.setSingleShot(True)
+                    self.powerUpCooldownTimer.start()
+            elif powerUpAction == 'stop_shooting':
+                self.playerOneCanShoot = False
+                # Cooldown
+                self.powerUpCooldownTimer = QTimer()
+                self.powerUpCooldownTimer.setInterval(config.POWERUP_COOLDOWN_TIMER)
+                self.powerUpCooldownTimer.timeout.connect(lambda: self.stop_powerup(1, powerUpAction))
+                self.powerUpCooldownTimer.setSingleShot(True)
+                self.powerUpCooldownTimer.start()
+
+    def stop_powerup(self, playerNum, powerUpAction):
+        print('Stop powerup player num: ', playerNum)
+        print('Stop powerup action: ', powerUpAction)
+
+        if powerUpAction == 'sonic_speed':
+            if playerNum == 1:
+                self.playerOneSpeed = config.PLAYER_SPEED
+            elif playerNum == 2:
+                self.playerTwoSpeed = config.PLAYER_SPEED
+            else:
+                self.playerOneSpeed = config.PLAYER_SPEED
+                self.playerTwoSpeed = config.PLAYER_SPEED
+        elif powerUpAction == 'turtle_speed':
+            if playerNum == 1:
+                self.playerOneSpeed = config.PLAYER_SPEED
+            elif playerNum == 2:
+                self.playerTwoSpeed = config.PLAYER_SPEED
+            else:
+                self.playerOneSpeed = config.PLAYER_SPEED
+                self.playerTwoSpeed = config.PLAYER_SPEED
+        elif powerUpAction == 'stop_shooting':
+            if playerNum == 1:
+                self.playerOneCanShoot = True
+            elif playerNum == 2:
+                self.playerTwoCanShoot = True
+            else:
+                self.playerOneCanShoot = True
+                self.playerTwoCanShoot = True
 
     def next_level(self, current_level):
         if self.activePlayers == 0 and len(self.enemyLabels) == 0:
@@ -333,6 +457,7 @@ class Game(QWidget):
 
             # hide powerup labels
             self.powerUpTimer.stop()
+            self.deusExMachina.shouldCheck = False
             print('Stopped power up timer')
             for label in self.powerUpLabels:
                 label.hide()
@@ -460,17 +585,16 @@ class Game(QWidget):
             self.shootLaser.remove_laser(laserLabel)
 
     def __update_position__(self, key):
-
         playerPos = self.playerLabel.geometry()
 
         if key == Qt.Key_D:
-            if self.try_move_player(playerPos.x() + self.playerSpeed):
-                self.playerLabel.setGeometry(playerPos.x() + self.playerSpeed, playerPos.y(), playerPos.width(), playerPos.height())
+            if self.try_move_player(playerPos.x() + self.playerOneSpeed):
+                self.playerLabel.setGeometry(playerPos.x() + self.playerOneSpeed, playerPos.y(), playerPos.width(), playerPos.height())
         elif key == Qt.Key_A:
-            if self.try_move_player(playerPos.x() - self.playerSpeed):
-                self.playerLabel.setGeometry(playerPos.x() - self.playerSpeed, playerPos.y(), playerPos.width(), playerPos.height())
+            if self.try_move_player(playerPos.x() - self.playerOneSpeed):
+                self.playerLabel.setGeometry(playerPos.x() - self.playerOneSpeed, playerPos.y(), playerPos.width(), playerPos.height())
         elif key == Qt.Key_Space:
-            if self.player.get_lives() > 0:
+            if self.player.get_lives() > 0 and self.playerOneCanShoot:
                 self.player_shoot_laser(playerPos.x() + config.IMAGE_WIDTH//2, playerPos.y() - config.IMAGE_HEIGHT)
 
         # 2 players
@@ -479,14 +603,33 @@ class Game(QWidget):
 
             # player two moving
             if key == Qt.Key_Right:
-                if self.try_move_player(playerTwoPos.x() + self.playerSpeed):
-                    self.playerTwoLabel.setGeometry(playerTwoPos.x() + self.playerSpeed, playerTwoPos.y(), playerTwoPos.width(),
-                                                 playerTwoPos.height())
+                if self.try_move_player(playerTwoPos.x() + self.playerTwoSpeed):
+                    self.playerTwoLabel.setGeometry(playerTwoPos.x() + self.playerTwoSpeed, playerTwoPos.y(), playerTwoPos.width(), playerTwoPos.height())
             elif key == Qt.Key_Left:
-                if self.try_move_player(playerTwoPos.x() - self.playerSpeed):
-                    self.playerTwoLabel.setGeometry(playerTwoPos.x() - self.playerSpeed, playerTwoPos.y(), playerTwoPos.width(),
-                                                 playerTwoPos.height())
+                if self.try_move_player(playerTwoPos.x() - self.playerTwoSpeed):
+                    self.playerTwoLabel.setGeometry(playerTwoPos.x() - self.playerTwoSpeed, playerTwoPos.y(), playerTwoPos.width(), playerTwoPos.height())
             elif key == Qt.Key_0:
-                if self.playerTwo.get_lives() > 0:
+                if self.playerTwo.get_lives() > 0 and self.playerTwoCanShoot:
                     self.player_shoot_laser(playerTwoPos.x() + config.IMAGE_WIDTH // 2, playerTwoPos.y() - config.IMAGE_HEIGHT)
 
+
+# ovo je mozda moglo u Deus Ex Machina po nekoj logici
+# Process for powerup positions
+def powerup_process(q: Queue):
+    print('Powerup process: ', current_process().pid)
+    while q.qsize() < 10:
+        # print('Q Size: ', q.qsize())
+        randomX = randint(0, config.BOARD_WIDTH - config.IMAGE_HEIGHT)
+        q.put(randomX)
+
+
+# Process for powerup actions - presporo je ovako
+"""
+def powerup_action(q: Queue):
+    powerUpActions = ['additional_life', 'sonic_speed', 'turtle_speed', 'faster_lasers']
+
+    randIndex = randint(0, len(powerUpActions))
+    powerUpAction = powerUpActions[1]   # Sonic speed
+
+    q.put(powerUpAction)
+"""

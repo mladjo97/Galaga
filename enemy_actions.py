@@ -194,7 +194,9 @@ class EnemyShoot(QObject):
                         if enemyY not in yArray:
                             yArray.append(enemyY)
 
-                    sortedYs = self.insertion_sort(yArray)
+                    #sortedYs = self.insertion_sort(yArray)
+                    sortedYs = yArray
+
                     if len(sortedYs) == 0:
                         #Dozvoli prvo da se svi laseri spuste
                         if len(self.lasers) == 0:
@@ -218,14 +220,12 @@ class EnemyShoot(QObject):
 
                         elif len(lowestRowEnemies) < 10:
                             # Imamo manje od 10, mozda neko iznad moze da puca
-                            # postoji bolji nacin da se ovaj problem resi, za sad neka bude ovako :D
                             if len(sortedYs) > 1:
                                 y = sortedYs[-2]
                             else:
-                                #print("Ostao je samo jedan red: ")
+                                #print("Ostao je samo jedan red")
                                 y = sortedYs[-1]
 
-                            # print("Evo ga: " , sortedYs[-2])
                             upperEnemies = self.get_enemies_from_y(y)
 
                             for lowerEnemy in lowestRowEnemies:
@@ -273,7 +273,6 @@ class EnemyShoot(QObject):
                                 playerY = playerGeo.y()
 
                                 xIsEqual = False
-                                yIsEqual = False
 
                                 if playerXStart <= laserX <= playerXEnd:
                                     xIsEqual = True
@@ -300,6 +299,7 @@ class EnemyShoot(QObject):
                 print('Exception in Moving_Laser: ', str(e))
 
             sleep(0.05)
+
 
 class EnemyAttack(QObject):
     can_attack = pyqtSignal(QLabel)
