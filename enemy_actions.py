@@ -277,14 +277,21 @@ class EnemyShoot(QObject):
                                 if playerXStart <= laserX <= playerXEnd:
                                     xIsEqual = True
 
-                                if laserY == playerY:
-                                    yIsEqual = True
+                                # nova provera za Y osu zbog brzih lasera
+                                playerYRange = range(playerY, playerY+config.IMAGE_HEIGHT)
+                                laserYRange = range(laserY, laserY+config.IMAGE_HEIGHT)
+                                #print('Player Y Range: {} - {}'.format(playerYRange[1], playerYRange[-1]))
+                                #print('Laser Y Range: {} - {}'.format(laserYRange[1], laserYRange[-1]))
 
-                                if xIsEqual and yIsEqual:
-                                    self.collision_detected.emit(laser, player)
-                                    self.remove_laser(laser)
-                                else:
-                                    self.move_down.emit(laser, laserX, laserY)
+                                for y in laserYRange:
+                                    if y in playerYRange and xIsEqual:
+                                        print('enemy hit player with laser')
+                                        self.collision_detected.emit(laser, player)
+                                        self.remove_laser(laser)
+                                        break
+                                    else:
+                                        self.move_down.emit(laser, laserX, laserY)
+
                         else:
                             self.move_down.emit(laser, laserX, laserY)
 
