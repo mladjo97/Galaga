@@ -147,29 +147,32 @@ class Game(QWidget):
         self.activate_enemy_threads()
 
     def next_level(self, current_level):
+        if self.activePlayers == 0 and len(self.enemyLabels) == 0:
+            self.displayGameOver()
 
-        self.enemyShoot.update_level(config.NEXTLVL_SHOOT_TIMER, config.NEXTLVL_ENEMY_LASER_SPEED)
+        else:
+            self.enemyShoot.update_level(config.NEXTLVL_SHOOT_TIMER, config.NEXTLVL_ENEMY_LASER_SPEED)
 
-        # Set enemy start positions
-        self.enemyLabels = []
-        self.update_level(current_level)
+            # Set enemy start positions
+            self.enemyLabels = []
+            self.update_level(current_level)
 
-        for i in range(3):
-            for j in range(10):
-                enemyLabel = QLabel(self)
-                enemyLabel.setPixmap(self.enemyPixmap)
-                positionX = config.IMAGE_WIDTH * (j + 3)
-                positionY = config.IMAGE_WIDTH * (i + 1)
-                enemyLabel.setGeometry(positionX, positionY, config.IMAGE_WIDTH, config.IMAGE_HEIGHT)
-                enemyLabel.show()
-                self.enemyLabels.append(enemyLabel)
+            for i in range(3):
+                for j in range(10):
+                    enemyLabel = QLabel(self)
+                    enemyLabel.setPixmap(self.enemyPixmap)
+                    positionX = config.IMAGE_WIDTH * (j + 3)
+                    positionY = config.IMAGE_WIDTH * (i + 1)
+                    enemyLabel.setGeometry(positionX, positionY, config.IMAGE_WIDTH, config.IMAGE_HEIGHT)
+                    enemyLabel.show()
+                    self.enemyLabels.append(enemyLabel)
 
-        # add enemies for other stuff
-        for i in range(len(self.enemyLabels)):
-            self.moveEnemy.add_enemy(self.enemyLabels[i])
-            self.enemyShoot.add_enemy(self.enemyLabels[i])
-            self.shootLaser.add_enemy(self.enemyLabels[i])
-            self.enemyAttack.add_enemy(self.enemyLabels[i])
+            # add enemies for other stuff
+            for i in range(len(self.enemyLabels)):
+                self.moveEnemy.add_enemy(self.enemyLabels[i])
+                self.enemyShoot.add_enemy(self.enemyLabels[i])
+                self.shootLaser.add_enemy(self.enemyLabels[i])
+                self.enemyAttack.add_enemy(self.enemyLabels[i])
 
     def update_level(self, current_level):
         print("LEVEL: ", current_level)
@@ -242,7 +245,32 @@ class Game(QWidget):
 
         # check if game over
         if self.activePlayers == 0:
-            self.displayGameOver()
+            while len(self.enemyLabels) != 0:
+                print("ENEMIES LEFT: " , len(self.enemyLabels))
+                for enemy in self.enemyLabels:
+                    try:
+                        enemy.hide()
+                    except Exception as e:
+                        print("EXP in game for hide(): ", e)
+                    self.enemyAttack.remove_enemy(enemy)
+                    self.enemyAttack.remove_moving_enemy(enemy)
+                    self.enemyShoot.remove_enemy(enemy)
+                    self.moveEnemy.remove_enemy(enemy)
+                    self.shootLaser.remove_enemy(enemy)
+                    self.shootLaser.remove_falling_enemy(enemy)
+                    self.remove_enemy_label(enemy)
+
+            #game over label
+            self.gameOver = QLabel(self)
+            self.gameOver.setFont(QFont("Times", 16, QFont.Bold))
+            gameOverX = config.BOARD_WIDTH // 2 - 50  # centar
+            gameOverY = config.BOARD_HEIGHT // 2
+            self.gameOver.setGeometry(gameOverX, gameOverY, 100, 100)
+            gameOverText = "<font color='white'>GAME OVER </font>"
+            print(gameOverText)
+            self.gameOver.setText(gameOverText)
+
+           # self.displayGameOver()
 
     def displayGameOver(self):
         self.gameOverSignal.emit()

@@ -127,7 +127,7 @@ class EnemyShoot(QObject):
             self.players.remove(playerLabel)
 
     def update_level(self, newInterval, newLaserSpeed):
-        if (self.shootingTimerInterval - newInterval) >= 500:
+        if (self.shootingTimerInterval - newInterval) >= 200:
             self.shootingTimerInterval -= newInterval
             self.shootingTimer.setInterval(self.shootingTimerInterval)
             print('Changed shooting interval to: ', self.shootingTimerInterval)
