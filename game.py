@@ -200,7 +200,7 @@ class Game(QWidget):
 
         # choose random powerup
         randIndex = randint(0, len(config.POWERUPS)-1)
-        powerUpAction = config.POWERUPS[2]
+        powerUpAction = config.POWERUPS[randIndex]
 
         print('Action: ', powerUpAction)
 
@@ -208,7 +208,6 @@ class Game(QWidget):
             if self.player.playerLabel == playerLabel:
                 # Player 1
                 print('Player 1 je pokupio powerup')
-
                 if powerUpAction == 'sonic_speed':
                     if not self.playerOneSpeed + 10 > 30:
                         self.playerOneSpeed += 10
@@ -221,7 +220,7 @@ class Game(QWidget):
                 elif powerUpAction == 'additional_life':
                     if self.player.get_lives() < 3:
                         self.player.lives += 1
-                        self.update_lives_label()
+                        self.update_lives_label(1)
                 elif powerUpAction == 'turtle_speed':
                     if self.playerOneSpeed - 10 >= 5:
                         self.playerOneSpeed -= 10
@@ -254,27 +253,29 @@ class Game(QWidget):
                         self.powerUpCooldownTimer.timeout.connect(lambda: self.stop_powerup(2, powerUpAction))
                         self.powerUpCooldownTimer.setSingleShot(True)
                         self.powerUpCooldownTimer.start()
-                    elif powerUpAction == 'additional_life':
-                        if self.playerTwo.get_lives() < 3:
-                            self.playerTwo.lives += 1
-                            self.update_lives_label()
-                    elif powerUpAction == 'turtle_speed':
-                        if self.playerTwoSpeed - 10 >= 5:
-                            self.playerTwoSpeed -= 10
-                            # Cooldown
-                            self.powerUpCooldownTimer = QTimer()
-                            self.powerUpCooldownTimer.setInterval(config.POWERUP_COOLDOWN_TIMER)
-                            self.powerUpCooldownTimer.timeout.connect(lambda: self.stop_powerup(2, powerUpAction))
-                            self.powerUpCooldownTimer.setSingleShot(True)
-                            self.powerUpCooldownTimer.start()
-                    elif powerUpAction == 'stop_shooting':
-                        self.playerTwoCanShoot = False
+                elif powerUpAction == 'additional_life':
+                    if self.playerTwo.get_lives() < 3:
+                        self.playerTwo.lives += 1
+                        self.update_lives_label(2)
+                elif powerUpAction == 'turtle_speed':
+                    if self.playerTwoSpeed - 10 >= 5:
+                        print("PlayerTwoSpeed: ",self.playerTwoSpeed)
+                        self.playerTwoSpeed -= 10
+                        print("PlayerTwoSpeed: ", self.playerTwoSpeed)
                         # Cooldown
                         self.powerUpCooldownTimer = QTimer()
                         self.powerUpCooldownTimer.setInterval(config.POWERUP_COOLDOWN_TIMER)
                         self.powerUpCooldownTimer.timeout.connect(lambda: self.stop_powerup(2, powerUpAction))
                         self.powerUpCooldownTimer.setSingleShot(True)
                         self.powerUpCooldownTimer.start()
+                elif powerUpAction == 'stop_shooting':
+                    self.playerTwoCanShoot = False
+                    # Cooldown
+                    self.powerUpCooldownTimer = QTimer()
+                    self.powerUpCooldownTimer.setInterval(config.POWERUP_COOLDOWN_TIMER)
+                    self.powerUpCooldownTimer.timeout.connect(lambda: self.stop_powerup(2, powerUpAction))
+                    self.powerUpCooldownTimer.setSingleShot(True)
+                    self.powerUpCooldownTimer.start()
         else:
             # Player 1
             print('Player 1 je pokupio powerup')
@@ -291,7 +292,7 @@ class Game(QWidget):
             elif powerUpAction == 'additional_life':
                 if self.player.get_lives() < 3:
                     self.player.lives += 1
-                    self.update_lives_label()
+                    self.update_lives_label(1)
             elif powerUpAction == 'turtle_speed':
                 if self.playerOneSpeed - 10 >= 5:
                     self.playerOneSpeed -= 10
@@ -482,7 +483,7 @@ class Game(QWidget):
         enemyLabel.move(newX, newY)
 
     def enemy_shoot_laser(self, startX, startY):
-        enemyLaserPixmap = QPixmap('images/laser.png')
+        enemyLaserPixmap = QPixmap('images/enemy_laser.png')
         enemyLaserLabel = QLabel(self)
         enemyLaserLabel.setPixmap(enemyLaserPixmap)
         enemyLaserLabel.setGeometry(startX, startY, config.IMAGE_WIDTH, config.IMAGE_HEIGHT)

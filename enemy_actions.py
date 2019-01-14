@@ -166,18 +166,6 @@ class EnemyShoot(QObject):
                     result.append(enemy)
         return result
 
-    # https://www.geeksforgeeks.org/insertion-sort/
-    def insertion_sort(self, arr):
-        result = arr
-        for i in range(1, len(result)):
-            key = result[i]
-            j = i - 1
-            while j >= 0 and key < result[j]:
-                result[j + 1] = result[j]
-                j -= 1
-            result[j + 1] = key
-        return result
-
     def alert_shooting(self):
         if not self.canShoot:
             self.canShoot = True
@@ -194,7 +182,6 @@ class EnemyShoot(QObject):
                         if enemyY not in yArray:
                             yArray.append(enemyY)
 
-                    #sortedYs = self.insertion_sort(yArray)
                     sortedYs = yArray
 
                     if len(sortedYs) == 0:

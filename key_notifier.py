@@ -14,7 +14,8 @@ class KeyNotifier(QObject):
         self.keys = []
         self.is_done = False
 
-        self.canShoot = False
+        self.canPlayerOneShoot = False
+        self.canPlayerTwoShoot = False
         self.cooldownTimer = QTimer()
         self.cooldownTimer.setInterval(config.PLAYER_LASER_COOLDOWN)
         self.cooldownTimer.timeout.connect(self.alert_cooldown)
@@ -47,8 +48,10 @@ class KeyNotifier(QObject):
         self.thread.quit()
 
     def alert_cooldown(self):
-        if not self.canShoot:
-            self.canShoot = True
+        if not self.canPlayerOneShoot:
+            self.canPlayerOneShoot = True
+        if not self.canPlayerTwoShoot:
+            self.canPlayerTwoShoot = True
 
     @pyqtSlot()
     def __work__(self):
@@ -56,11 +59,18 @@ class KeyNotifier(QObject):
         A slot with no params.
         """
         while not self.is_done:
+
             for k in self.keys:
+
                 if k == Qt.Key_Space:
-                    if self.canShoot:
+                    if self.canPlayerOneShoot:
                         self.key_signal.emit(k)
-                        self.canShoot = False
+                        self.canPlayerOneShoot = False
+
+                elif k == Qt.Key_0:
+                    if self.canPlayerTwoShoot:
+                        self.key_signal.emit(k)
+                        self.canPlayerTwoShoot = False
                 else:
                     self.key_signal.emit(k)
             time.sleep(0.05)

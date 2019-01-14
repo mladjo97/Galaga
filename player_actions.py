@@ -59,41 +59,46 @@ class ShootLaser(QObject):
             try:
                 collided = False
 
-                # Collision with enemies
+                # Collision with enemy
                 for enemy in self.enemyLabels:
+
                     if collided:
                         break
 
-                    # Get enemy geometry
                     enemyGeo = enemy.geometry()
                     enemyXStart = enemyGeo.x()
                     enemyXEnd = enemyGeo.x() + config.IMAGE_WIDTH
-                    enemyY = enemyGeo.y() + config.IMAGE_HEIGHT
+                    enemyYStart = enemyGeo.y()
+                    enemyYEnd = enemyGeo.y() + config.IMAGE_HEIGHT
 
+                    enemyXArray = range(enemyXStart, enemyXEnd)
+                    enemyYArray = range(enemyYStart, enemyYEnd)
+
+                    # check for collision with laser
                     for laser in self.laserLabels:
-                        # get laser geometry
                         laserGeo = laser.geometry()
                         laserXStart = laserGeo.x()
-                        laserXEnd = laserGeo.x() + laserGeo.width()
-                        laserX = laserXStart + ((laserXEnd - laserXStart) // 2)
-                        laserY = laserGeo.y()
+                        laserXEnd = laserGeo.x() + config.IMAGE_WIDTH
+                        laserYStart = laserGeo.y()
+                        laserYEnd = laserGeo.y() + config.IMAGE_HEIGHT
 
-                        # Check for collision
-                        xIsEqual = False
-                        yIsEqual = False
+                        laserXArray = range(laserXStart, laserXEnd)
+                        laserYArray = range(laserYStart, laserYEnd)
 
-                        if enemyXStart <= laserX <= enemyXEnd:
-                            xIsEqual = True
+                        # drugi nacin detekcije kolizije
+                        for enemyY in enemyYArray:
+                            if collided:
+                                break
 
-                        if laserY == enemyY:
-                            yIsEqual = True
-                        if xIsEqual and yIsEqual:
-                            # print('Collision detected for y: {} {}'.format(enemyY, laserY))
-                            self.remove_enemy(enemy)
-                            self.remove_laser(laser)
-                            self.collision_detected.emit(enemy, laser)
-                            collided = True
-                            break
+                            if enemyY in laserYArray:
+                                for enemyX in enemyXArray:
+                                    if enemyX in laserXArray:
+                                        #print('Collision detected for y: {} {}'.format(enemyY, laserY))
+                                        self.remove_enemy(enemy)
+                                        self.remove_laser(laser)
+                                        self.collision_detected.emit(enemy, laser)
+                                        collided = True
+                                        break
 
                 # Collision with falling enemy
                 if not collided:

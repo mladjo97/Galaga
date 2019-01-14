@@ -16,6 +16,7 @@ class GameWindow(QMainWindow):
 
         print('Started new game window')
 
+        self.game = None
         self.centralWidget = QStackedWidget()
         self.setCentralWidget(self.centralWidget)
         self.mainMenuWidget = MainMenu()
@@ -82,23 +83,24 @@ class GameWindow(QMainWindow):
     def stopThreads(self):
         try:
             print('Closing all threads from Galagaa')
-            self.game.shootLaser.die()
-            self.game.moveEnemy.die()
-            self.game.enemyShoot.die()
-            self.game.enemyAttack.die()
-            self.game.deusExMachina.die()
+            if self.game is not None:
+                self.game.shootLaser.die()
+                self.game.moveEnemy.die()
+                self.game.enemyShoot.die()
+                self.game.enemyAttack.die()
+                self.game.deusExMachina.die()
             self.key_notifier.die()
         except Exception as e:
             print('Exception while trying to close threads: {}', str(e))
 
     def closeEvent(self, event):
         try:
-            print('Closing all threads')
-            self.game.shootLaser.die()
-            self.game.moveEnemy.die()
-            self.game.enemyShoot.die()
-            self.game.enemyAttack.die()
-            self.game.deusExMachina.die()
+            if self.game is not None:
+                self.game.shootLaser.die()
+                self.game.moveEnemy.die()
+                self.game.enemyShoot.die()
+                self.game.enemyAttack.die()
+                self.game.deusExMachina.die()
             self.key_notifier.die()
         except Exception as e:
             print('Exception while trying to close threads: {}', str(e))
