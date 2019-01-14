@@ -81,12 +81,26 @@ class Game(QWidget):
 
         # add second player
         if self.startPlayers == 2:
-            self.playerTwoPixmap = QPixmap('images/ship.png')
+            self.playerTwoPixmap = QPixmap('images/ship_two.png')
 
         # Set enemy pixmaps
-        self.enemyPixmap = QPixmap('images/enemy.png')
-        self.enemyPixmap = self.enemyPixmap.scaledToWidth(config.IMAGE_WIDTH - 20)
-        self.enemyPixmap = self.enemyPixmap.scaledToHeight(config.IMAGE_HEIGHT - 20)
+        self.enemyPixmaps = []
+        enemyPixmap = QPixmap('images/enemy_1.png')
+        enemyPixmap = enemyPixmap.scaledToWidth(config.IMAGE_WIDTH - 20)
+        enemyPixmap = enemyPixmap.scaledToHeight(config.IMAGE_HEIGHT - 20)
+        self.enemyPixmaps.append(enemyPixmap)
+        enemyPixmap = QPixmap('images/enemy_2.png')
+        enemyPixmap = enemyPixmap.scaledToWidth(config.IMAGE_WIDTH - 20)
+        enemyPixmap = enemyPixmap.scaledToHeight(config.IMAGE_HEIGHT - 20)
+        self.enemyPixmaps.append(enemyPixmap)
+        enemyPixmap = QPixmap('images/enemy_3.png')
+        enemyPixmap = enemyPixmap.scaledToWidth(config.IMAGE_WIDTH - 20)
+        enemyPixmap = enemyPixmap.scaledToHeight(config.IMAGE_HEIGHT - 20)
+        self.enemyPixmaps.append(enemyPixmap)
+        enemyPixmap = QPixmap('images/enemy_4.png')
+        enemyPixmap = enemyPixmap.scaledToWidth(config.IMAGE_WIDTH - 20)
+        enemyPixmap = enemyPixmap.scaledToHeight(config.IMAGE_HEIGHT - 20)
+        self.enemyPixmaps.append(enemyPixmap)
 
         self.__init_ui__()
 
@@ -161,7 +175,8 @@ class Game(QWidget):
         for i in range(3):
             for j in range(10):
                 enemyLabel = QLabel(self)
-                enemyLabel.setPixmap(self.enemyPixmap)
+                randIndex = randint(0, len(self.enemyPixmaps)-1)
+                enemyLabel.setPixmap(self.enemyPixmaps[randIndex])
                 positionX = config.IMAGE_WIDTH * (j+3)
                 positionY = config.IMAGE_WIDTH * (i+1)
                 enemyLabel.setGeometry(positionX, positionY, config.IMAGE_WIDTH, config.IMAGE_HEIGHT)
@@ -200,7 +215,7 @@ class Game(QWidget):
 
         # choose random powerup
         randIndex = randint(0, len(config.POWERUPS)-1)
-        powerUpAction = config.POWERUPS[randIndex]
+        powerUpAction = config.POWERUPS[0]
 
         print('Action: ', powerUpAction)
 
@@ -220,6 +235,7 @@ class Game(QWidget):
                 elif powerUpAction == 'additional_life':
                     if self.player.get_lives() < 3:
                         self.player.lives += 1
+                        print('Player 1 lives: ', self.player.get_lives())
                         self.update_lives_label(1)
                 elif powerUpAction == 'turtle_speed':
                     if self.playerOneSpeed - 10 >= 5:
@@ -292,6 +308,7 @@ class Game(QWidget):
             elif powerUpAction == 'additional_life':
                 if self.player.get_lives() < 3:
                     self.player.lives += 1
+                    print('Player 1 lives: ', self.player.get_lives())
                     self.update_lives_label(1)
             elif powerUpAction == 'turtle_speed':
                 if self.playerOneSpeed - 10 >= 5:
@@ -354,7 +371,8 @@ class Game(QWidget):
             for i in range(3):
                 for j in range(10):
                     enemyLabel = QLabel(self)
-                    enemyLabel.setPixmap(self.enemyPixmap)
+                    randIndex = randint(0, len(self.enemyPixmaps) - 1)
+                    enemyLabel.setPixmap(self.enemyPixmaps[randIndex])
                     positionX = config.IMAGE_WIDTH * (j + 3)
                     positionY = config.IMAGE_WIDTH * (i + 1)
                     enemyLabel.setGeometry(positionX, positionY, config.IMAGE_WIDTH, config.IMAGE_HEIGHT)
@@ -398,6 +416,7 @@ class Game(QWidget):
     def update_lives_label(self, player):
         if player == 1:
             lives = self.player.get_lives()
+            print('Update label lives: ', lives)
             if lives == 3:
                 self.playerLivesLabelText = "<font color='white'>Lives: 3</font>"
                 self.playerLivesLabel.setText(self.playerLivesLabelText)

@@ -114,7 +114,6 @@ class MainMenu(QWidget):
     playTwoPlayerGameSignal = pyqtSignal()
     quitGameSignal = pyqtSignal()
 
-
     def __init__(self):
         super(MainMenu, self).__init__()
 
